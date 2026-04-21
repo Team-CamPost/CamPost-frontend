@@ -21,7 +21,7 @@ const router = createBrowserRouter([
       {
         element: <PublicRoute />,
         children: [
-          { path: ROUTE_PATHS.home, element: <LandingPage /> },
+          { index: true, element: <LandingPage /> },
           { path: ROUTE_PATHS.login, element: <LoginPage /> },
           {
             path: ROUTE_PATHS.departmentDashboard,

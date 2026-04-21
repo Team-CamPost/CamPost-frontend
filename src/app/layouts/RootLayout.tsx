@@ -8,19 +8,19 @@ function RootLayout() {
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 text-sm">
           <div className="flex items-center gap-4">
             <Link
-              className="font-semibold text-[#2046FF]"
+              className="text-primary font-semibold"
               to={ROUTES.home}
             >
               CamPost
             </Link>
             <Link
-              className="text-slate-600 hover:text-[#2046FF]"
+              className="hover:text-primary text-slate-600"
               to={ROUTES.login}
             >
               로그인
             </Link>
             <Link
-              className="text-slate-600 hover:text-[#2046FF]"
+              className="hover:text-primary text-slate-600"
               to={ROUTES.mypage}
             >
               마이페이지
