@@ -1,25 +1,36 @@
-import { Link, useParams } from "react-router-dom";
-import { ROUTES } from "../../app/router/paths";
-import { getDepartmentById } from "../../shared/constants/departments";
+import { HeroBannerCarousel } from "./components/HeroBannerCarousel";
+import { NoticeSection } from "./components/NoticeSection";
+import { URGENT_NOTICES, ALL_NOTICES } from "./mockData";
 
 export const DepartmentDashboardPage = () => {
-  const { departmentId = "" } = useParams();
-  const department = getDepartmentById(departmentId);
-
   return (
-    <main className="min-h-screen bg-white p-8 text-slate-900">
-      <h1 className="mb-2 text-2xl font-bold">학과 대시보드 페이지입니다.</h1>
-      <p className="mb-6 text-slate-600">
-        현재 학과: {department ? department.name : departmentId}
-      </p>
+    <main className="min-h-screen w-full pb-20">
+      {/* 1. Hero Banner Carousel (Auto-scrolling) */}
+      <HeroBannerCarousel />
 
-      <div className="space-x-4 text-sm text-[#2046FF]">
-        <Link to={ROUTES.noticeDetail(departmentId || "sw", "1")}>
-          공지 상세로 이동
-        </Link>
-        <Link to={ROUTES.bookmarks}>북마크(Private)로 이동</Link>
-        <Link to={ROUTES.home}>랜딩으로 이동</Link>
-      </div>
+      {/* 3. Curated Notice Sections (Event-us Style) */}
+      <NoticeSection
+        title="적극 홍보 중인 공지"
+        description="학과의 중요한 행사나 혜택을 놓치지 마세요! 🔥"
+        notices={URGENT_NOTICES}
+        viewAllLink="#urgent"
+      />
+
+      <NoticeSection
+        title="최신 등록 공지"
+        description="방금 올라온 따끈따끈한 새 소식입니다."
+        notices={ALL_NOTICES.slice(0, 4)} // Show top 4
+        viewAllLink="#recent"
+      />
+
+      <NoticeSection
+        title="마감 임박 공지"
+        description="시간이 얼마 남지 않았어요! 서둘러 확인하세요."
+        notices={[...URGENT_NOTICES, ...ALL_NOTICES]
+          .filter((n) => n.dDay !== undefined)
+          .slice(0, 4)}
+        viewAllLink="#deadline"
+      />
     </main>
   );
 };

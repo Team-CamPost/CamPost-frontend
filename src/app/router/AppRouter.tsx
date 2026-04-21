@@ -1,5 +1,6 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { RootLayout } from "../layouts/RootLayout";
+import { DepartmentLayout } from "../layouts/DepartmentLayout";
 import { BookmarksPage } from "../../pages/bookmarks/BookmarksPage";
 import { DepartmentDashboardPage } from "../../pages/dashboard/DepartmentDashboardPage";
 import { LandingPage } from "../../pages/landing/LandingPage";
@@ -24,12 +25,17 @@ const router = createBrowserRouter([
           { index: true, element: <LandingPage /> },
           { path: ROUTE_PATHS.login, element: <LoginPage /> },
           {
-            path: ROUTE_PATHS.departmentDashboard,
-            element: <DepartmentDashboardPage />,
-          },
-          {
-            path: ROUTE_PATHS.noticeDetail,
-            element: <NoticeDetailPage />,
+            element: <DepartmentLayout />,
+            children: [
+              {
+                path: ROUTE_PATHS.departmentDashboard,
+                element: <DepartmentDashboardPage />,
+              },
+              {
+                path: ROUTE_PATHS.noticeDetail,
+                element: <NoticeDetailPage />,
+              },
+            ],
           },
         ],
       },
