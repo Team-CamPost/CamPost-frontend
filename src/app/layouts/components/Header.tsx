@@ -3,13 +3,14 @@ import { ROUTES } from "../../router/paths";
 import { usePreferredDepartment } from "../../../shared/hooks/usePreferredDepartment";
 import { useAuth } from "../../../shared/hooks/useAuth";
 import logoImage from "../../../assets/images/CamPost_logo.png";
+import type { MouseEvent } from "react";
 
 export const Header = () => {
   const navigate = useNavigate();
   const { preferredDepartmentId } = usePreferredDepartment();
   const { isAuthenticated, logout } = useAuth();
 
-  const handleLogoClick = (e: React.MouseEvent) => {
+  const handleLogoClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (preferredDepartmentId) {
       navigate(ROUTES.departmentDashboard(preferredDepartmentId));

@@ -2,7 +2,6 @@ import { Link, useParams, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Bell,
-  FileText,
   Bookmark,
   GraduationCap,
   AlarmClock,
@@ -27,19 +26,13 @@ export const DepartmentSidebar = () => {
       id: "all-notices",
       label: "전체 공지사항",
       icon: <Bell size={18} />,
-      path: `#all-notices`, // Placeholder
+      path: `${ROUTES.departmentDashboard(departmentId)}#recent`,
     },
     {
       id: "deadline-notices",
       label: "마감 임박 공지",
       icon: <AlarmClock size={18} />,
-      path: `#deadline-notices`, // Placeholder
-    },
-    {
-      id: "board",
-      label: "학과 게시판",
-      icon: <FileText size={18} />,
-      path: `#board`, // Placeholder
+      path: `${ROUTES.departmentDashboard(departmentId)}#deadline`,
     },
     {
       id: "bookmarks",

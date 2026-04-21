@@ -17,11 +17,17 @@ export const NoticeSection = ({
   viewAllLink = "#",
 }: NoticeSectionProps) => {
   const { departmentId = "" } = useParams();
+  const sectionId = viewAllLink.startsWith("#")
+    ? viewAllLink.slice(1)
+    : undefined;
 
   if (!notices || notices.length === 0) return null;
 
   return (
-    <section className="mb-16">
+    <section
+      id={sectionId}
+      className="mb-16 scroll-mt-24"
+    >
       {/* Section Header */}
       <div className="mb-6 flex items-end justify-between">
         <div>

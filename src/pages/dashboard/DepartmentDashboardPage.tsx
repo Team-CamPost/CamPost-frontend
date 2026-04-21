@@ -1,6 +1,6 @@
-import { HeroBannerCarousel } from "./components/HeroBannerCarousel";
-import { NoticeSection } from "./components/NoticeSection";
-import { URGENT_NOTICES, ALL_NOTICES } from "./mockData";
+import { HeroBannerCarousel } from "../../features/dashboard/components/HeroBannerCarousel";
+import { NoticeSection } from "../../features/dashboard/components/NoticeSection";
+import { URGENT_NOTICES, ALL_NOTICES } from "../../features/dashboard/mockData";
 
 export const DepartmentDashboardPage = () => {
   return (
@@ -13,7 +13,12 @@ export const DepartmentDashboardPage = () => {
         title="마감 임박 공지"
         description="시간이 얼마 남지 않았어요! 서둘러 확인하세요."
         notices={[...URGENT_NOTICES, ...ALL_NOTICES]
-          .filter((n) => n.dDay !== undefined)
+          .filter((notice) => notice.dDay !== undefined)
+          .sort(
+            (firstNotice, secondNotice) =>
+              (firstNotice.dDay ?? Number.POSITIVE_INFINITY) -
+              (secondNotice.dDay ?? Number.POSITIVE_INFINITY),
+          )
           .slice(0, 4)}
         viewAllLink="#deadline"
       />

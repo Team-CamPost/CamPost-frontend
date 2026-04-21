@@ -40,18 +40,27 @@ const BANNERS = [
 export const HeroBannerCarousel = () => {
   const { departmentId = "" } = useParams();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Auto-scroll logic
   useEffect(() => {
+    if (isPaused) return;
+
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % BANNERS.length);
     }, 4000); // Change banner every 4 seconds
 
     return () => clearInterval(timer);
-  }, []);
+  }, [currentIndex, isPaused]);
 
   return (
-    <div className="relative mb-10 flex h-[240px] w-full overflow-hidden rounded-2xl bg-slate-900 shadow-lg">
+    <div
+      className="relative mb-10 flex h-[240px] w-full overflow-hidden rounded-2xl bg-slate-900 shadow-lg"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+    >
       {/* Banner Slides */}
       {BANNERS.map((banner, index) => (
         <div
