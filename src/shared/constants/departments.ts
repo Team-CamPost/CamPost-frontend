@@ -11,6 +11,5 @@ export const DEPARTMENTS: Department[] = [
   { id: "ai", name: "인공지능학과" },
 ];
 
-export function getDepartmentById(departmentId: string) {
-  return DEPARTMENTS.find((department) => department.id === departmentId);
-}
+export const getDepartmentById = (departmentId: string) =>
+  DEPARTMENTS.find((department) => department.id === departmentId);

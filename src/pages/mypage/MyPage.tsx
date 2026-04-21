@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 
-function MyPage() {
+export const MyPage = () => {
   return (
     <main className="min-h-screen bg-white p-8 text-slate-900">
       <h1 className="mb-4 text-2xl font-bold">마이 페이지입니다.</h1>
@@ -13,6 +13,4 @@ function MyPage() {
       </Link>
     </main>
   );
-}
-
-export default MyPage;
+};

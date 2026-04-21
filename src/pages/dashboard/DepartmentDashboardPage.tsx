@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import { getDepartmentById } from "../../shared/constants/departments";
 
-function DepartmentDashboardPage() {
+export const DepartmentDashboardPage = () => {
   const { departmentId = "" } = useParams();
   const department = getDepartmentById(departmentId);
 
@@ -22,6 +22,4 @@ function DepartmentDashboardPage() {
       </div>
     </main>
   );
-}
-
-export default DepartmentDashboardPage;
+};

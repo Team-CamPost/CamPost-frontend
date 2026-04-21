@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 
-function NoticeDetailPage() {
+export const NoticeDetailPage = () => {
   const { departmentId = "", noticeId = "" } = useParams();
 
   return (
@@ -19,6 +19,4 @@ function NoticeDetailPage() {
       </div>
     </main>
   );
-}
-
-export default NoticeDetailPage;
+};

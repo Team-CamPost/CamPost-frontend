@@ -1,7 +1,7 @@
 import { isRouteErrorResponse, useRouteError, Link } from "react-router-dom";
 import { ROUTES } from "./paths";
 
-function RouteErrorPage() {
+export const RouteErrorPage = () => {
   const error = useRouteError();
 
   let title = "페이지 오류가 발생했습니다.";
@@ -24,6 +24,4 @@ function RouteErrorPage() {
       </Link>
     </main>
   );
-}
-
-export default RouteErrorPage;
+};

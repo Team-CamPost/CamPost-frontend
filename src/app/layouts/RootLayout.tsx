@@ -1,7 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 import { ROUTES } from "../router/paths";
 
-function RootLayout() {
+export const RootLayout = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white">
@@ -32,6 +32,4 @@ function RootLayout() {
       <Outlet />
     </div>
   );
-}
-
-export default RootLayout;
+};

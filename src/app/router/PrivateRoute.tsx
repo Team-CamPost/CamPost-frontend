@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { ROUTES } from "./paths";
 import { useAuth } from "../../shared/hooks/useAuth";
 
-function PrivateRoute() {
+export const PrivateRoute = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
@@ -17,6 +17,4 @@ function PrivateRoute() {
   }
 
   return <Outlet />;
-}
-
-export default PrivateRoute;
+};

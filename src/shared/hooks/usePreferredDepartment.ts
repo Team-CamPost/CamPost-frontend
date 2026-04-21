@@ -1,26 +1,36 @@
-import { useMemo } from "react";
+import { useCallback, useState } from "react";
 
 const PREFERRED_DEPARTMENT_KEY = "campost.preferred-department";
 
-export function getPreferredDepartmentId() {
-  return localStorage.getItem(PREFERRED_DEPARTMENT_KEY);
-}
+export const getPreferredDepartmentId = () =>
+  localStorage.getItem(PREFERRED_DEPARTMENT_KEY);
 
-export function setPreferredDepartmentId(departmentId: string) {
+export const setPreferredDepartmentId = (departmentId: string) => {
   localStorage.setItem(PREFERRED_DEPARTMENT_KEY, departmentId);
-}
+};
 
-export function clearPreferredDepartmentId() {
+export const clearPreferredDepartmentId = () => {
   localStorage.removeItem(PREFERRED_DEPARTMENT_KEY);
-}
+};
 
-export function usePreferredDepartment() {
-  return useMemo(
-    () => ({
-      preferredDepartmentId: getPreferredDepartmentId(),
-      setPreferredDepartmentId,
-      clearPreferredDepartmentId,
-    }),
-    [],
+export const usePreferredDepartment = () => {
+  const [preferredDepartmentId, setPreferredDepartmentIdState] = useState(
+    getPreferredDepartmentId,
   );
-}
+
+  const handleSetPreferredDepartmentId = useCallback((departmentId: string) => {
+    setPreferredDepartmentId(departmentId);
+    setPreferredDepartmentIdState(departmentId);
+  }, []);
+
+  const handleClearPreferredDepartmentId = useCallback(() => {
+    clearPreferredDepartmentId();
+    setPreferredDepartmentIdState(null);
+  }, []);
+
+  return {
+    preferredDepartmentId,
+    setPreferredDepartmentId: handleSetPreferredDepartmentId,
+    clearPreferredDepartmentId: handleClearPreferredDepartmentId,
+  };
+};

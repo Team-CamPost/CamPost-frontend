@@ -3,7 +3,7 @@ import { DEPARTMENTS } from "../../shared/constants/departments";
 import { ROUTES } from "../../app/router/paths";
 import { setPreferredDepartmentId } from "../../shared/hooks/usePreferredDepartment";
 
-function LandingPage() {
+export const LandingPage = () => {
   const navigate = useNavigate();
 
   const handleSelectDepartment = (departmentId: string) => {
@@ -37,6 +37,4 @@ function LandingPage() {
       </div>
     </main>
   );
-}
-
-export default LandingPage;
+};

@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "../../../shared/config/env";
 import type { ApiResponse, CrawlJob } from "../model/types";
 
-export async function getCrawlJobs(limit = 10): Promise<CrawlJob[]> {
+export const getCrawlJobs = async (limit = 10): Promise<CrawlJob[]> => {
   const response = await fetch(
     `${API_BASE_URL}/api/v1/collect/jobs?limit=${limit}`,
   );
@@ -17,4 +17,4 @@ export async function getCrawlJobs(limit = 10): Promise<CrawlJob[]> {
   }
 
   return payload.result;
-}
+};

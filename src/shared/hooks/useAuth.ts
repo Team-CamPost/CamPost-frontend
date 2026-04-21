@@ -3,15 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const ACCESS_TOKEN_KEY = "campost.access-token";
 const AUTH_CHANGED_EVENT = "campost-auth-changed";
 
-function hasAccessToken() {
-  return Boolean(localStorage.getItem(ACCESS_TOKEN_KEY));
-}
+const hasAccessToken = () => Boolean(localStorage.getItem(ACCESS_TOKEN_KEY));
 
-function notifyAuthChanged() {
+const notifyAuthChanged = () =>
   window.dispatchEvent(new CustomEvent(AUTH_CHANGED_EVENT));
-}
 
-export function useAuth() {
+export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(hasAccessToken);
 
   useEffect(() => {
@@ -40,4 +37,4 @@ export function useAuth() {
     () => ({ isAuthenticated, login, logout }),
     [isAuthenticated, login, logout],
   );
-}
+};

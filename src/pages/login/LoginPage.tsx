@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import { useAuth } from "../../shared/hooks/useAuth";
 
-function LoginPage() {
+export const LoginPage = () => {
   const { isAuthenticated, login, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,6 +48,4 @@ function LoginPage() {
       </Link>
     </main>
   );
-}
-
-export default LoginPage;
+};
