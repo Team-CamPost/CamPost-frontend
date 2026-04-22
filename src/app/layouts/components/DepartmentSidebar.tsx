@@ -42,6 +42,9 @@ export const DepartmentSidebar = () => {
     },
   ];
 
+  const currentPath = location.pathname;
+  const currentHash = location.hash;
+
   return (
     <div className="flex flex-col gap-6 pb-8">
       {/* Department Header */}
@@ -62,8 +65,14 @@ export const DepartmentSidebar = () => {
           Menu
         </span>
         {NAV_ITEMS.map((item) => {
-          const isActive =
-            location.pathname === item.path || location.hash === item.path;
+          const itemHash = item.path.includes("#")
+            ? `#${item.path.split("#")[1]}`
+            : "";
+          const itemPath = item.path.split("#")[0];
+
+          const isActive = itemHash
+            ? currentPath === itemPath && currentHash === itemHash
+            : currentPath === itemPath && currentHash === "";
 
           return (
             <Link
