@@ -3,7 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { Clock3, LayoutGrid, List, Paperclip } from "lucide-react";
 import { NoticeCard } from "./NoticeCard";
 import { ROUTES } from "../../../app/router/paths";
-import { getCategoryTone, isDeadlineSoon } from "../utils/noticeStyle";
+import {
+  getCategoryTone,
+  getDeadlineBadgeLabel,
+  isDeadlinePassed,
+  isDeadlineSoon,
+} from "../utils/noticeStyle";
 import { getDateSortValue } from "../../../shared/utils/date";
 import type { NoticeCardData } from "../types/notice";
 
@@ -188,10 +193,12 @@ export const LatestNoticeBoard = ({
                   >
                     {notice.category}
                   </span>
-                  {isDeadlineSoon(notice) && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-orange-500 px-2 py-0.5 text-xs font-bold text-white">
+                  {(isDeadlineSoon(notice) || isDeadlinePassed(notice)) && (
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold text-white ${isDeadlinePassed(notice) ? "bg-slate-500" : "bg-orange-500"}`}
+                    >
                       <Clock3 size={12} />
-                      D-{notice.dDay}
+                      {getDeadlineBadgeLabel(notice)}
                     </span>
                   )}
                   <span className="truncate text-sm font-medium text-slate-800 group-hover:text-[#2046FF]">

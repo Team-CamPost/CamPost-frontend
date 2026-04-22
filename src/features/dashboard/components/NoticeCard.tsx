@@ -2,7 +2,12 @@ import { Link } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
 import type { NoticeCardData } from "../types/notice";
-import { getCategoryTone, isDeadlineSoon } from "../utils/noticeStyle";
+import {
+  getCategoryTone,
+  getDeadlineBadgeLabel,
+  isDeadlinePassed,
+  isDeadlineSoon,
+} from "../utils/noticeStyle";
 
 interface NoticeCardProps {
   notice: NoticeCardData;
@@ -10,7 +15,8 @@ interface NoticeCardProps {
 }
 
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
-  const showDeadlineBadge = isDeadlineSoon(notice);
+  const showDeadlineBadge = isDeadlineSoon(notice) || isDeadlinePassed(notice);
+  const deadlineBadgeLabel = getDeadlineBadgeLabel(notice);
 
   return (
     <div className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:border-[#2046FF]/30 hover:shadow-lg hover:shadow-[#2046FF]/10">
@@ -32,11 +38,9 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
               </span>
               {showDeadlineBadge && (
                 <span
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${notice.dDay !== undefined && notice.dDay < 0 ? "bg-slate-500" : "bg-orange-500"}`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${isDeadlinePassed(notice) ? "bg-slate-500" : "bg-orange-500"}`}
                 >
-                  {notice.dDay !== undefined && notice.dDay < 0
-                    ? "마감"
-                    : `D-${notice.dDay}`}
+                  {deadlineBadgeLabel}
                 </span>
               )}
             </div>

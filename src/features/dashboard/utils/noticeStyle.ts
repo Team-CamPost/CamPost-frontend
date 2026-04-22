@@ -5,7 +5,28 @@ type NoticeWithDeadline = Pick<NoticeCardData, "dDay">;
 export const DEADLINE_SOON_THRESHOLD = 5;
 
 export const isDeadlineSoon = (notice: NoticeWithDeadline) =>
-  notice.dDay !== undefined && notice.dDay <= DEADLINE_SOON_THRESHOLD;
+  notice.dDay !== undefined &&
+  notice.dDay >= 0 &&
+  notice.dDay <= DEADLINE_SOON_THRESHOLD;
+
+export const isDeadlinePassed = (notice: NoticeWithDeadline) =>
+  notice.dDay !== undefined && notice.dDay < 0;
+
+export const getDeadlineBadgeLabel = (notice: NoticeWithDeadline) => {
+  if (notice.dDay === undefined) {
+    return null;
+  }
+
+  if (isDeadlinePassed(notice)) {
+    return "마감";
+  }
+
+  if (notice.dDay === 0) {
+    return "D-day";
+  }
+
+  return `D-${notice.dDay}`;
+};
 
 export const getCategoryTone = (category: string) => {
   switch (category) {
