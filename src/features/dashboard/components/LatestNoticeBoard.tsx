@@ -45,7 +45,7 @@ export const LatestNoticeBoard = ({
 }: LatestNoticeBoardProps) => {
   const { departmentId = "" } = useParams();
   const [view, setView] = useState<NoticeView>("card");
-  const resolvedView: NoticeView = filter === "deadline" ? "card" : view;
+  const resolvedView = view;
 
   const filteredNotices = useMemo(
     () => getFilteredNotices(notices, filter),
@@ -110,7 +110,6 @@ export const LatestNoticeBoard = ({
             }`}
             aria-label="리스트 보기"
             aria-pressed={resolvedView === "list"}
-            disabled={filter === "deadline"}
           >
             <List size={18} />
           </button>

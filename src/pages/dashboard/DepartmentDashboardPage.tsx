@@ -22,6 +22,7 @@ export const DepartmentDashboardPage = () => {
       />
 
       <LatestNoticeBoard
+        key={activeFilter}
         notices={[...URGENT_NOTICES, ...ALL_NOTICES]}
         filter={activeFilter}
       />
