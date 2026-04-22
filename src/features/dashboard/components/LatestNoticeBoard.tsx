@@ -82,7 +82,7 @@ export const LatestNoticeBoard = ({
       : "최근 등록된 공지를 빠르게 확인하세요.";
 
   return (
-    <section className="mt-10 scroll-mt-24">
+    <section className="scroll-mt-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-[0.16em] text-emerald-700 uppercase">

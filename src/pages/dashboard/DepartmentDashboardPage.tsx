@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { HeroBannerCarousel } from "../../features/dashboard/components/HeroBannerCarousel";
 import { TrendingNotices } from "../../features/dashboard/components/TrendingNotices";
 import { UrgentNotices } from "../../features/dashboard/components/UrgentNotices";
+import { NewDepartmentNotices } from "../../features/dashboard/components/NewDepartmentNotices";
 import { LatestNoticeBoard } from "../../features/dashboard/components/LatestNoticeBoard";
+import { DashboardSectionStack } from "../../features/dashboard/components/DashboardSectionStack";
 import { fetchNotices } from "../../shared/api/notice";
 import { getBackendDeptCodeByDepartmentId } from "../../shared/constants/departments";
 import type { NoticeCardData } from "../../features/dashboard/types/notice";
@@ -74,36 +76,39 @@ export const DepartmentDashboardPage = () => {
         className="scroll-mt-24"
       />
 
-      {activeFilter ? (
-        isPending ? (
-          <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="text-xl font-bold text-slate-900">공지 목록</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              데이터를 불러오는 중입니다...
-            </p>
-          </section>
-        ) : isError ? (
-          <section className="mt-10 rounded-2xl border border-rose-200 bg-rose-50 p-6">
-            <h2 className="text-xl font-bold text-rose-700">공지 목록</h2>
-            <p className="mt-2 text-sm text-rose-600">
-              {error instanceof Error
-                ? error.message
-                : "데이터를 불러오지 못했습니다."}
-            </p>
-          </section>
+      <DashboardSectionStack>
+        {activeFilter ? (
+          isPending ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h2 className="text-xl font-bold text-slate-900">공지 목록</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                데이터를 불러오는 중입니다...
+              </p>
+            </section>
+          ) : isError ? (
+            <section className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
+              <h2 className="text-xl font-bold text-rose-700">공지 목록</h2>
+              <p className="mt-2 text-sm text-rose-600">
+                {error instanceof Error
+                  ? error.message
+                  : "데이터를 불러오지 못했습니다."}
+              </p>
+            </section>
+          ) : (
+            <LatestNoticeBoard
+              key={activeFilter}
+              notices={latestNotices}
+              filter={activeFilter}
+            />
+          )
         ) : (
-          <LatestNoticeBoard
-            key={activeFilter}
-            notices={latestNotices}
-            filter={activeFilter}
-          />
-        )
-      ) : (
-        <>
-          <UrgentNotices />
-          <TrendingNotices />
-        </>
-      )}
+          <>
+            <UrgentNotices />
+            <TrendingNotices />
+            <NewDepartmentNotices />
+          </>
+        )}
+      </DashboardSectionStack>
     </main>
   );
 };

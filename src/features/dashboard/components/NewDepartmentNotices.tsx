@@ -1,13 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotices } from "../../../shared/api/notice";
-import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
 import { NoticeSection } from "./NoticeSection";
 import type { NoticeCardData } from "../types/notice";
 
-export const UrgentNotices = () => {
+export const NewDepartmentNotices = () => {
   const { departmentId = "sw" } = useParams();
-  const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
 
   const {
     data: notices,
@@ -15,11 +13,10 @@ export const UrgentNotices = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["notices", "urgent", departmentId, backendDeptCode],
+    queryKey: ["notices", "new-department", "recent", 4],
     queryFn: () =>
       fetchNotices({
-        deptCode: backendDeptCode,
-        sortBy: "deadline",
+        sortBy: "recent",
         limit: 4,
       }),
   });
@@ -29,18 +26,18 @@ export const UrgentNotices = () => {
     title: notice.title,
     category: notice.category || "미분류",
     date: formatDate(notice.date),
-    dDay: getDDay(notice.deadline ?? notice.date) ?? undefined,
+    dDay: undefined,
     isBookmarked: false,
   }));
 
   return (
     <NoticeSection
-      title="마감 임박 공지"
-      description="시간이 얼마 남지 않았어요! 서둘러 확인하세요."
+      title="신규 학과 공지"
+      description="전체 공지에서 가장 최신 등록 공지를 모아봤어요."
       departmentId={departmentId}
       notices={cardNotices}
-      viewAllLink="#deadline"
-      emptyMessage="현재 마감 임박 공지가 없어요!"
+      viewAllLink="#recent"
+      emptyMessage="현재 신규 학과 공지가 없어요!"
       isLoading={isPending}
       isError={isError}
       errorMessage={error instanceof Error ? error.message : "Unknown error"}
@@ -51,19 +48,4 @@ export const UrgentNotices = () => {
 const formatDate = (value: string | null) => {
   if (!value) return "-";
   return value.replaceAll("-", ".");
-};
-
-const getDDay = (deadline: string | null) => {
-  if (!deadline) return null;
-
-  const today = new Date();
-  const baseDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const targetDate = new Date(`${deadline}T00:00:00`);
-
-  const diffMs = targetDate.getTime() - baseDate.getTime();
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 };
