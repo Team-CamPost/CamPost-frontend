@@ -30,7 +30,7 @@ export const UrgentNotices = () => {
     title: notice.title,
     category: notice.category || "미분류",
     date: formatDate(notice.date),
-    dDay: getDDay(notice.deadline ?? notice.date) ?? undefined,
+    dDay: getDDay(notice.deadline) ?? undefined,
     isBookmarked: false,
   }));
 
