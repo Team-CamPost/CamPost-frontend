@@ -1,10 +1,73 @@
 import { Link, useParams } from "react-router-dom";
-import { URGENT_NOTICES } from "../mockData";
-import { ROUTES } from "../../../app/router/paths";
-import { ChevronRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchNotices } from "../../../shared/api/notice";
+import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
+import { NoticeCard } from "./NoticeCard";
+import type { NoticeCardData } from "../types/notice";
 
 export const TrendingNotices = () => {
-  const { departmentId = "" } = useParams();
+  const { departmentId = "sw" } = useParams();
+  const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
+
+  const {
+    data: notices,
+    isPending,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["notices", "trending", departmentId, backendDeptCode],
+    queryFn: () =>
+      fetchNotices({
+        deptCode: backendDeptCode,
+        sortBy: "recent",
+        limit: 4,
+      }),
+  });
+
+  if (isPending) {
+    return (
+      <section className="mb-16 rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          적극 홍보 중인 공지
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">로딩 중...</p>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="mb-16 rounded-2xl border border-rose-200 bg-rose-50 p-6">
+        <h2 className="text-2xl font-bold tracking-tight text-rose-700">
+          적극 홍보 중인 공지
+        </h2>
+        <p className="mt-2 text-sm text-rose-600">
+          데이터를 불러오지 못했습니다:{" "}
+          {error instanceof Error ? error.message : "Unknown error"}
+        </p>
+      </section>
+    );
+  }
+
+  if (!notices || notices.length === 0) {
+    return (
+      <section className="mb-16 rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          적극 홍보 중인 공지
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">표시할 공지가 없습니다.</p>
+      </section>
+    );
+  }
+
+  const cardNotices: NoticeCardData[] = notices.map((notice) => ({
+    id: String(notice.id),
+    title: notice.title,
+    category: notice.category || "미분류",
+    date: formatDate(notice.date),
+    dDay: undefined,
+    isBookmarked: false,
+  }));
 
   return (
     <section className="mb-16">
@@ -21,52 +84,24 @@ export const TrendingNotices = () => {
           to={`#all`}
           className="flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-[#2046FF]"
         >
-          더 많은 공지 보기 <ChevronRight size={16} />
+          더보기
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-        {URGENT_NOTICES.map((notice, index) => (
-          <Link
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {cardNotices.map((notice) => (
+          <NoticeCard
             key={notice.id}
-            to={ROUTES.noticeDetail(departmentId, notice.id)}
-            className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-[#2046FF]/10"
-          >
-            {/* Image Placeholder (Thumbnail) */}
-            <div
-              className={`flex h-40 w-full flex-col justify-between p-6 ${index % 2 === 0 ? "bg-blue-50" : "bg-indigo-50"}`}
-            >
-              <div className="flex items-start justify-between">
-                <span className="rounded border border-white bg-white/60 px-2 py-1 text-xs font-bold text-[#2046FF] backdrop-blur-sm">
-                  {notice.category}
-                </span>
-                {notice.dDay !== undefined && (
-                  <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                    D-{notice.dDay}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Content Area */}
-            <div className="flex flex-col p-6">
-              <h3 className="mb-2 line-clamp-2 text-lg leading-tight font-bold text-slate-900 transition-colors group-hover:text-[#2046FF]">
-                {notice.title}
-              </h3>
-              {notice.summary && (
-                <p className="mb-6 line-clamp-2 text-sm leading-relaxed text-slate-500">
-                  {notice.summary}
-                </p>
-              )}
-              <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
-                <span className="text-xs font-medium text-slate-400">
-                  작성일 {notice.date}
-                </span>
-              </div>
-            </div>
-          </Link>
+            notice={notice}
+            departmentId={departmentId}
+          />
         ))}
       </div>
     </section>
   );
+};
+
+const formatDate = (value: string | null) => {
+  if (!value) return "-";
+  return value.replaceAll("-", ".");
 };

@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
-import { type Notice } from "../mockData";
 import { ROUTES } from "../../../app/router/paths";
+import type { NoticeCardData } from "../types/notice";
 
 interface NoticeCardProps {
-  notice: Notice;
+  notice: NoticeCardData;
   departmentId: string;
 }
 
@@ -26,8 +26,10 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
                 {notice.category}
               </span>
               {notice.dDay !== undefined && (
-                <span className="rounded-full bg-orange-500 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-                  D-{notice.dDay}
+                <span
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${notice.dDay < 0 ? "bg-slate-500" : "bg-orange-500"}`}
+                >
+                  {notice.dDay < 0 ? "마감" : `D-${notice.dDay}`}
                 </span>
               )}
             </div>

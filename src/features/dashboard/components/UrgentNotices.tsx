@@ -1,71 +1,122 @@
-import { Paperclip, Bookmark } from "lucide-react";
-import { URGENT_NOTICES } from "../mockData";
 import { Link, useParams } from "react-router-dom";
-import { ROUTES } from "../../../app/router/paths";
+import { useQuery } from "@tanstack/react-query";
+import { fetchNotices } from "../../../shared/api/notice";
+import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
+import { NoticeCard } from "./NoticeCard";
+import type { NoticeCardData } from "../types/notice";
 
 export const UrgentNotices = () => {
-  const { departmentId = "" } = useParams();
+  const { departmentId = "sw" } = useParams();
+  const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
+
+  const {
+    data: notices,
+    isPending,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["notices", "urgent", departmentId, backendDeptCode],
+    queryFn: () =>
+      fetchNotices({
+        deptCode: backendDeptCode,
+        sortBy: "deadline",
+        limit: 4,
+      }),
+  });
+
+  if (isPending) {
+    return (
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="mb-2 text-lg font-bold text-slate-800">
+          긴급 / 마감 임박
+        </h2>
+        <p className="text-sm text-slate-500">로딩 중...</p>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-5">
+        <h2 className="mb-2 text-lg font-bold text-rose-700">
+          긴급 / 마감 임박
+        </h2>
+        <p className="text-sm text-rose-600">
+          데이터를 불러오지 못했습니다:{" "}
+          {error instanceof Error ? error.message : "Unknown error"}
+        </p>
+      </section>
+    );
+  }
+
+  if (!notices || notices.length === 0) {
+    return (
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="mb-2 text-lg font-bold text-slate-800">
+          긴급 / 마감 임박
+        </h2>
+        <p className="text-sm text-slate-500">마감 임박 공지가 없습니다.</p>
+      </section>
+    );
+  }
+
+  const cardNotices: NoticeCardData[] = notices.map((notice) => ({
+    id: String(notice.id),
+    title: notice.title,
+    category: notice.category || "미분류",
+    date: formatDate(notice.date),
+    dDay: getDDay(notice.deadline ?? notice.date) ?? undefined,
+    isBookmarked: false,
+  }));
 
   return (
     <section className="mt-8">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-xl">⚠️</span>
-        <h2 className="text-lg font-bold text-slate-800">긴급 / 마감 임박</h2>
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            마감 임박 공지
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            시간이 얼마 남지 않았어요! 서둘러 확인하세요.
+          </p>
+        </div>
+        <Link
+          to="#all"
+          className="text-sm font-medium text-slate-500 transition-colors hover:text-[#2046FF]"
+        >
+          더보기
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {URGENT_NOTICES.map((notice) => (
-          <Link
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {cardNotices.map((notice) => (
+          <NoticeCard
             key={notice.id}
-            to={ROUTES.noticeDetail(departmentId, notice.id)}
-            className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#2046FF]/30 hover:shadow-md"
-          >
-            {/* Top row: Badges and Icons */}
-            <div className="mb-3 flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                {notice.dDay !== undefined && (
-                  <span className="rounded-full bg-orange-500 px-2.5 py-0.5 text-xs font-bold tracking-tight text-white">
-                    D-{notice.dDay}
-                  </span>
-                )}
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                  {notice.category}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                {notice.hasAttachment && <Paperclip size={16} />}
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-                    notice.isBookmarked
-                      ? "bg-blue-50 text-[#2046FF]"
-                      : "bg-slate-50 hover:bg-slate-100 hover:text-slate-600"
-                  }`}
-                >
-                  <Bookmark
-                    size={14}
-                    fill={notice.isBookmarked ? "currentColor" : "none"}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <h3 className="mb-2 line-clamp-1 text-base font-bold text-slate-900 transition-colors group-hover:text-[#2046FF]">
-              {notice.title}
-            </h3>
-            {notice.summary && (
-              <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-slate-600">
-                {notice.summary}
-              </p>
-            )}
-
-            {/* Bottom row: Date */}
-            <div className="mt-auto flex items-center justify-end text-xs font-medium text-slate-400">
-              {notice.date}
-            </div>
-          </Link>
+            notice={notice}
+            departmentId={departmentId}
+          />
         ))}
       </div>
     </section>
   );
+};
+
+const formatDate = (value: string | null) => {
+  if (!value) return "-";
+  return value.replaceAll("-", ".");
+};
+
+const getDDay = (deadline: string | null) => {
+  if (!deadline) return null;
+
+  const today = new Date();
+  const baseDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const targetDate = new Date(`${deadline}T00:00:00`);
+
+  const diffMs = targetDate.getTime() - baseDate.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 };
