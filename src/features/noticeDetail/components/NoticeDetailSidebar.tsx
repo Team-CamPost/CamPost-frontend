@@ -9,6 +9,14 @@ interface NoticeDetailSidebarProps {
 export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
   // 북마크 상태 관리를 위한 로컬 state (API 연동 전 UI 피드백용)
   const [isBookmarked, setIsBookmarked] = useState(notice.isBookmarked);
+  const [prevNoticeId, setPrevNoticeId] = useState(notice.id);
+
+  // ESLint 에러 해결: notice prop이 변경될 때 렌더링 단계에서 직접 상태를 동기화합니다.
+  // (React 공식 문서 권장 패턴: Adjusting some state when a prop changes)
+  if (notice.id !== prevNoticeId) {
+    setPrevNoticeId(notice.id);
+    setIsBookmarked(notice.isBookmarked);
+  }
 
   const handleBookmarkToggle = () => {
     // 차후 API 호출 로직 추가 (Optimistic update)
