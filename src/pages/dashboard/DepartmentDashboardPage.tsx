@@ -4,7 +4,7 @@ import { URGENT_NOTICES, ALL_NOTICES } from "../../features/dashboard/mockData";
 
 export const DepartmentDashboardPage = () => {
   return (
-    <main className="min-h-screen w-full pb-20">
+    <main className="w-full pb-20">
       {/* 1. Hero Banner Carousel (Auto-scrolling) */}
       <HeroBannerCarousel />
 
