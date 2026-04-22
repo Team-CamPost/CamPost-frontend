@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import { ChevronRight } from "lucide-react";
@@ -8,6 +7,7 @@ import { NoticeDetailSidebar } from "../../features/noticeDetail/components/Noti
 import { NoticeDetailRecommendations } from "../../features/noticeDetail/components/NoticeDetailRecommendations";
 import { fetchNoticeDetail, fetchNotices } from "../../shared/api/notice";
 import { getBackendDeptCodeByDepartmentId } from "../../shared/constants/departments";
+import { formatDate, getDDay } from "../../shared/utils/date";
 import type { NoticeCardData } from "../../features/dashboard/types/notice";
 import type {
   NoticeDetailData,
@@ -20,10 +20,6 @@ export const NoticeDetailPage = () => {
   const parsedNoticeId = Number.parseInt(noticeId, 10);
   const hasValidNoticeId =
     Number.isFinite(parsedNoticeId) && parsedNoticeId > 0;
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [noticeId]);
 
   const {
     data: noticeDetail,
@@ -139,30 +135,6 @@ export const NoticeDetailPage = () => {
   );
 };
 
-const formatDate = (value: string | null) => {
-  if (!value) return "-";
-  return value.replaceAll("-", ".");
-};
-
-const getDDay = (deadline: string | null) => {
-  if (!deadline) return undefined;
-
-  const today = new Date();
-  const baseDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const targetDate = new Date(`${deadline}T00:00:00`);
-
-  if (Number.isNaN(targetDate.getTime())) {
-    return undefined;
-  }
-
-  const diffMs = targetDate.getTime() - baseDate.getTime();
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
-};
-
 const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
   const tags = [notice.department, notice.category].filter(
     (value): value is string => Boolean(value && value.trim()),
@@ -175,7 +147,7 @@ const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
     department: notice.department || "학과 미정",
     date: formatDate(notice.date),
     deadline: formatDate(notice.deadline),
-    dDay: getDDay(notice.deadline),
+    dDay: getDDay(notice.deadline) ?? undefined,
     author: notice.author || "작성자 미상",
     target: notice.target || "제한 없음",
     applyMethod: notice.applyMethod || "별도 안내 없음",

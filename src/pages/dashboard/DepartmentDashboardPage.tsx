@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { HeroBannerCarousel } from "../../features/dashboard/components/HeroBannerCarousel";
@@ -9,6 +8,7 @@ import { LatestNoticeBoard } from "../../features/dashboard/components/LatestNot
 import { DashboardSectionStack } from "../../features/dashboard/components/DashboardSectionStack";
 import { fetchNotices } from "../../shared/api/notice";
 import { getBackendDeptCodeByDepartmentId } from "../../shared/constants/departments";
+import { formatDate, getDDay } from "../../shared/utils/date";
 import type { NoticeCardData } from "../../features/dashboard/types/notice";
 
 type NoticeFilter = "recent" | "deadline";
@@ -30,12 +30,6 @@ export const DepartmentDashboardPage = () => {
         ? "recent"
         : null;
   const showHeroBanner = activeFilter === null;
-
-  useEffect(() => {
-    if (activeFilter === null) {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    }
-  }, [activeFilter]);
 
   const {
     data: latestNotices = [],
@@ -103,7 +97,6 @@ export const DepartmentDashboardPage = () => {
             </section>
           ) : (
             <LatestNoticeBoard
-              key={activeFilter}
               notices={latestNotices}
               filter={activeFilter}
             />
@@ -118,28 +111,4 @@ export const DepartmentDashboardPage = () => {
       </DashboardSectionStack>
     </main>
   );
-};
-
-const formatDate = (value: string | null) => {
-  if (!value) return "-";
-  return value.replaceAll("-", ".");
-};
-
-const getDDay = (deadline: string | null) => {
-  if (!deadline) return null;
-
-  const today = new Date();
-  const baseDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const targetDate = new Date(`${deadline}T00:00:00`);
-
-  if (Number.isNaN(targetDate.getTime())) {
-    return null;
-  }
-
-  const diffMs = targetDate.getTime() - baseDate.getTime();
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 };

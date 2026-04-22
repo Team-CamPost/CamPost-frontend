@@ -4,6 +4,7 @@ import { Clock3, LayoutGrid, List, Paperclip } from "lucide-react";
 import { NoticeCard } from "./NoticeCard";
 import { ROUTES } from "../../../app/router/paths";
 import { getCategoryTone, isDeadlineSoon } from "../utils/noticeStyle";
+import { getDateSortValue } from "../../../shared/utils/date";
 import type { NoticeCardData } from "../types/notice";
 
 type NoticeFilter = "recent" | "deadline";
@@ -20,11 +21,6 @@ interface LatestNoticeBoardProps {
   filter: NoticeFilter;
 }
 
-const parseDate = (value: string) => {
-  const parsed = Date.parse(value.replace(/\./g, "-"));
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
 const getFilteredNotices = (
   notices: LatestNoticeItem[],
   filter: NoticeFilter,
@@ -38,10 +34,14 @@ const getFilteredNotices = (
 
 const getSortedNotices = (notices: LatestNoticeItem[], order: NoticeOrder) => {
   if (order === "oldest") {
-    return [...notices].sort((a, b) => parseDate(a.date) - parseDate(b.date));
+    return [...notices].sort(
+      (a, b) => getDateSortValue(a.date) - getDateSortValue(b.date),
+    );
   }
 
-  return [...notices].sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  return [...notices].sort(
+    (a, b) => getDateSortValue(b.date) - getDateSortValue(a.date),
+  );
 };
 
 export const LatestNoticeBoard = ({

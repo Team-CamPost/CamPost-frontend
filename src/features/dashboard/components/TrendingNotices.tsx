@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotices } from "../../../shared/api/notice";
 import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
+import { formatDate } from "../../../shared/utils/date";
 import { NoticeSection } from "./NoticeSection";
 import type { NoticeCardData } from "../types/notice";
 
@@ -46,9 +47,4 @@ export const TrendingNotices = () => {
       errorMessage={error instanceof Error ? error.message : "Unknown error"}
     />
   );
-};
-
-const formatDate = (value: string | null) => {
-  if (!value) return "-";
-  return value.replaceAll("-", ".");
 };

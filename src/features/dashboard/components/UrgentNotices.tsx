@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotices } from "../../../shared/api/notice";
 import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
+import { formatDate, getDDay } from "../../../shared/utils/date";
 import { NoticeSection } from "./NoticeSection";
 import type { NoticeCardData } from "../types/notice";
 
@@ -46,24 +47,4 @@ export const UrgentNotices = () => {
       errorMessage={error instanceof Error ? error.message : "Unknown error"}
     />
   );
-};
-
-const formatDate = (value: string | null) => {
-  if (!value) return "-";
-  return value.replaceAll("-", ".");
-};
-
-const getDDay = (deadline: string | null) => {
-  if (!deadline) return null;
-
-  const today = new Date();
-  const baseDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const targetDate = new Date(`${deadline}T00:00:00`);
-
-  const diffMs = targetDate.getTime() - baseDate.getTime();
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 };
