@@ -17,7 +17,7 @@ export const NoticeDetailPage = () => {
   const recommendedNotices = ALL_NOTICES.slice(0, 4);
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8 pb-24 sm:px-6 lg:px-8">
+    <main className="w-full pb-20">
       {/* 상단 Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-slate-500">
         <Link

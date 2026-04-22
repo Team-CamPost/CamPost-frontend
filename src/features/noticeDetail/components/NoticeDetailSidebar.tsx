@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Calendar, ExternalLink, Share2, Bookmark, Eye } from "lucide-react";
 import type { NoticeDetailData } from "../types";
 
@@ -6,8 +7,16 @@ interface NoticeDetailSidebarProps {
 }
 
 export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
+  // 북마크 상태 관리를 위한 로컬 state (API 연동 전 UI 피드백용)
+  const [isBookmarked, setIsBookmarked] = useState(notice.isBookmarked);
+
+  const handleBookmarkToggle = () => {
+    // 차후 API 호출 로직 추가 (Optimistic update)
+    setIsBookmarked((prev) => !prev);
+  };
+
   return (
-    <div className="sticky top-24 flex shrink-0 flex-col gap-6 lg:w-[380px]">
+    <div className="sticky top-24 flex shrink-0 flex-col gap-6 lg:w-[360px]">
       <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/50">
         {/* 카테고리 태그 */}
         <div className="mb-5 flex items-center gap-2">
@@ -58,26 +67,33 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
 
         {/* 액션 버튼 그룹 */}
         <div className="flex flex-col gap-3">
-          <a
-            href={notice.originalUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2046FF] py-4 font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl"
+          <button
+            onClick={handleBookmarkToggle}
+            className={`group flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-bold transition-all active:scale-[0.98] ${
+              isBookmarked
+                ? "bg-[#2046FF] text-white shadow-lg shadow-blue-500/25 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl" // 저장됨 상태 (쨍한 파란색)
+                : "bg-[#2046FF]/10 text-[#2046FF] hover:bg-[#2046FF]/20" // 기본 상태 (은은한 파란색)
+            }`}
           >
-            원문 이동하기 <ExternalLink size={18} />
-          </a>
+            <Bookmark
+              size={20}
+              className={`transition-colors ${isBookmarked ? "fill-currentColor" : ""}`}
+            />
+            {isBookmarked ? "저장됨" : "북마크"}
+          </button>
 
           <div className="mt-1 flex items-center gap-2">
             <button className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50">
               <Share2 size={18} /> 공유
             </button>
-            <button className="group flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500">
-              <Bookmark
-                size={18}
-                className={`transition-colors ${notice.isBookmarked ? "fill-red-500 text-red-500" : "group-hover:text-red-500"}`}
-              />{" "}
-              관심 공지
-            </button>
+            <a
+              href={notice.originalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-[#2046FF]"
+            >
+              원문 이동 <ExternalLink size={18} />
+            </a>
           </div>
         </div>
       </div>
