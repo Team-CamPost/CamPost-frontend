@@ -85,7 +85,7 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
           >
             <Bookmark
               size={20}
-              className={`transition-colors ${isBookmarked ? "fill-currentColor" : ""}`}
+              className={`transition-colors ${isBookmarked ? "fill-current" : ""}`}
             />
             {isBookmarked ? "저장됨" : "북마크"}
           </button>
