@@ -41,17 +41,18 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
           {notice.title}
         </h1>
 
-        {/* 해시태그 */}
-        <div className="mb-8 flex flex-wrap gap-1.5">
-          {notice.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded bg-[#2046FF]/5 px-2 py-1 text-xs font-semibold text-[#2046FF]/80"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+        {notice.tags.length > 0 && (
+          <div className="mb-8 flex flex-wrap gap-1.5">
+            {notice.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded bg-[#2046FF]/5 px-2 py-1 text-xs font-semibold text-[#2046FF]/80"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <hr className="mb-6 border-slate-100" />
 
@@ -69,6 +70,38 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
             </span>
             <span className="font-semibold text-slate-900">
               {notice.views}회
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-slate-500">
+              작성자
+            </span>
+            <span className="font-semibold text-slate-900">
+              {notice.author}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-slate-500">
+              마감일
+            </span>
+            <span className="font-semibold text-slate-900">
+              {notice.deadline}
+            </span>
+          </div>
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex shrink-0 items-center gap-2 text-slate-500">
+              대상
+            </span>
+            <span className="text-right font-semibold text-slate-900">
+              {notice.target}
+            </span>
+          </div>
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex shrink-0 items-center gap-2 text-slate-500">
+              신청방법
+            </span>
+            <span className="text-right font-semibold text-slate-900">
+              {notice.applyMethod}
             </span>
           </div>
         </div>

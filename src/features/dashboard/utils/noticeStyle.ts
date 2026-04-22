@@ -1,8 +1,10 @@
-import { type Notice } from "../mockData";
+import type { NoticeCardData } from "../types/notice";
+
+type NoticeWithDeadline = Pick<NoticeCardData, "dDay">;
 
 export const DEADLINE_SOON_THRESHOLD = 5;
 
-export const isDeadlineSoon = (notice: Notice) =>
+export const isDeadlineSoon = (notice: NoticeWithDeadline) =>
   notice.dDay !== undefined && notice.dDay <= DEADLINE_SOON_THRESHOLD;
 
 export const getCategoryTone = (category: string) => {

@@ -2,11 +2,11 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotices } from "../../../shared/api/notice";
 import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
-import { formatDate, getDDay } from "../../../shared/utils/date";
+import { formatDate, getDateSortValue } from "../../../shared/utils/date";
 import { NoticeSection } from "./NoticeSection";
 import type { NoticeCardData } from "../types/notice";
 
-export const UrgentNotices = () => {
+export const NewDepartmentNotices = () => {
   const { departmentId = "sw" } = useParams();
   const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
 
@@ -16,32 +16,36 @@ export const UrgentNotices = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["notices", "urgent", departmentId, backendDeptCode],
+    queryKey: ["notices", "new-department", "recent", departmentId, 4],
     queryFn: () =>
       fetchNotices({
         deptCode: backendDeptCode,
-        sortBy: "deadline",
-        limit: 4,
+        sortBy: "recent",
+        limit: 40,
       }),
   });
 
-  const cardNotices: NoticeCardData[] = (notices || []).map((notice) => ({
-    id: String(notice.id),
-    title: notice.title,
-    category: notice.category || "미분류",
-    date: formatDate(notice.date),
-    dDay: getDDay(notice.deadline ?? notice.date) ?? undefined,
-    isBookmarked: false,
-  }));
+  const cardNotices: NoticeCardData[] = (notices || [])
+    .slice()
+    .sort((a, b) => getDateSortValue(b.date) - getDateSortValue(a.date))
+    .slice(0, 4)
+    .map((notice) => ({
+      id: String(notice.id),
+      title: notice.title,
+      category: notice.category || "미분류",
+      date: formatDate(notice.date),
+      dDay: undefined,
+      isBookmarked: false,
+    }));
 
   return (
     <NoticeSection
-      title="마감 임박 공지"
-      description="시간이 얼마 남지 않았어요! 서둘러 확인하세요."
+      title="신규 학과 공지"
+      description="현재 학과에서 가장 최신 등록된 공지를 모아봤어요."
       departmentId={departmentId}
       notices={cardNotices}
-      viewAllLink="#deadline"
-      emptyMessage="현재 마감 임박 공지가 없어요!"
+      viewAllLink="#recent"
+      emptyMessage="현재 신규 학과 공지가 없어요!"
       isLoading={isPending}
       isError={isError}
       errorMessage={error instanceof Error ? error.message : "Unknown error"}

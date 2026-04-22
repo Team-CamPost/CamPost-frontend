@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
 import { NoticeCard } from "../../dashboard/components/NoticeCard";
-import type { Notice } from "../../dashboard/mockData";
+import type { NoticeCardData } from "../../dashboard/types/notice";
 
 interface NoticeDetailRecommendationsProps {
   departmentId: string;
-  recommendedNotices: Notice[];
+  recommendedNotices: NoticeCardData[];
 }
 
 export const NoticeDetailRecommendations = ({

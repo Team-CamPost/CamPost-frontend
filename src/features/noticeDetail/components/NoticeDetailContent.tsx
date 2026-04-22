@@ -5,6 +5,8 @@ interface NoticeDetailContentProps {
 }
 
 export const NoticeDetailContent = ({ notice }: NoticeDetailContentProps) => {
+  const bodyText = notice.bodyText.trim();
+
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-8">
       {/* 포스터/대표 이미지 영역 (가상의 빈 박스) */}
@@ -23,15 +25,15 @@ export const NoticeDetailContent = ({ notice }: NoticeDetailContentProps) => {
         <h3 className="mb-6 text-xl font-bold text-slate-800">
           {notice.title}
         </h3>
-        <p className="leading-relaxed text-slate-600">
-          문화체육관광부와 예술경영지원센터는 글로벌 미술시장을 주제로 전문가와
-          함께하는 토크 프로그램을 준비했습니다.
-          <br />
-          <br />
-          이곳에 HTML로 파싱된 원문 텍스트가 렌더링될 예정입니다. 가독성을
-          높이기 위해 넉넉한 여백과 기본 타이포그래피 스타일이 적용되어
-          있습니다.
-        </p>
+        {bodyText ? (
+          <p className="leading-relaxed whitespace-pre-wrap text-slate-600">
+            {bodyText}
+          </p>
+        ) : (
+          <p className="leading-relaxed text-slate-500">
+            본문 데이터가 없습니다.
+          </p>
+        )}
       </div>
     </div>
   );
