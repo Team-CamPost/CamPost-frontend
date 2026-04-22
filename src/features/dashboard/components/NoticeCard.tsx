@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
 import type { NoticeCardData } from "../types/notice";
+import { getCategoryTone, isDeadlineSoon } from "../utils/noticeStyle";
 
 interface NoticeCardProps {
   notice: NoticeCardData;
@@ -9,6 +10,8 @@ interface NoticeCardProps {
 }
 
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
+  const showDeadlineBadge = isDeadlineSoon(notice);
+
   return (
     <div className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:border-[#2046FF]/30 hover:shadow-lg hover:shadow-[#2046FF]/10">
       <Link
@@ -22,14 +25,18 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
 
           <div className="absolute inset-0 flex flex-col justify-between p-4">
             <div className="flex items-start justify-between">
-              <span className="rounded border border-white bg-white/80 px-2 py-1 text-[11px] font-bold text-slate-700 shadow-sm backdrop-blur-sm">
+              <span
+                className={`rounded border px-2 py-1 text-[11px] font-bold shadow-sm backdrop-blur-sm ${getCategoryTone(notice.category)}`}
+              >
                 {notice.category}
               </span>
-              {notice.dDay !== undefined && (
+              {showDeadlineBadge && (
                 <span
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${notice.dDay < 0 ? "bg-slate-500" : "bg-orange-500"}`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${notice.dDay !== undefined && notice.dDay < 0 ? "bg-slate-500" : "bg-orange-500"}`}
                 >
-                  {notice.dDay < 0 ? "마감" : `D-${notice.dDay}`}
+                  {notice.dDay !== undefined && notice.dDay < 0
+                    ? "마감"
+                    : `D-${notice.dDay}`}
                 </span>
               )}
             </div>

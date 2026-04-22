@@ -81,7 +81,7 @@ export const UrgentNotices = () => {
           </p>
         </div>
         <Link
-          to="#all"
+          to="#deadline"
           className="text-sm font-medium text-slate-500 transition-colors hover:text-[#2046FF]"
         >
           더보기

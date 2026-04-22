@@ -81,7 +81,7 @@ export const TrendingNotices = () => {
           </p>
         </div>
         <Link
-          to={`#all`}
+          to="#recent"
           className="flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-[#2046FF]"
         >
           더보기
