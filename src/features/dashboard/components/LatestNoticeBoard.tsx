@@ -8,6 +8,7 @@ import type { NoticeCardData } from "../types/notice";
 
 type NoticeFilter = "recent" | "deadline";
 type NoticeView = "card" | "list";
+type NoticeOrder = "latest" | "oldest";
 
 interface LatestNoticeItem extends NoticeCardData {
   summary?: string;
@@ -29,19 +30,15 @@ const getFilteredNotices = (
   filter: NoticeFilter,
 ) => {
   if (filter === "deadline") {
-    return notices
-      .filter((notice) => isDeadlineSoon(notice))
-      .sort((a, b) => {
-        const dDayGap =
-          (a.dDay ?? Number.POSITIVE_INFINITY) -
-          (b.dDay ?? Number.POSITIVE_INFINITY);
+    return notices.filter((notice) => isDeadlineSoon(notice));
+  }
 
-        if (dDayGap !== 0) {
-          return dDayGap;
-        }
+  return [...notices];
+};
 
-        return parseDate(b.date) - parseDate(a.date);
-      });
+const getSortedNotices = (notices: LatestNoticeItem[], order: NoticeOrder) => {
+  if (order === "oldest") {
+    return [...notices].sort((a, b) => parseDate(a.date) - parseDate(b.date));
   }
 
   return [...notices].sort((a, b) => parseDate(b.date) - parseDate(a.date));
@@ -53,26 +50,24 @@ export const LatestNoticeBoard = ({
 }: LatestNoticeBoardProps) => {
   const { departmentId = "" } = useParams();
   const [view, setView] = useState<NoticeView>("card");
+  const [order, setOrder] = useState<NoticeOrder>("latest");
+  const [page, setPage] = useState(1);
   const resolvedView = view;
+  const pageSize = 12;
 
   const filteredNotices = useMemo(
     () => getFilteredNotices(notices, filter),
     [notices, filter],
   );
-  const featuredNotice = useMemo(
-    () =>
-      [...filteredNotices]
-        .filter((notice) => notice.dDay !== undefined)
-        .sort(
-          (a, b) =>
-            (a.dDay ?? Number.POSITIVE_INFINITY) -
-            (b.dDay ?? Number.POSITIVE_INFINITY),
-        )[0],
-    [filteredNotices],
+  const sortedNotices = useMemo(
+    () => getSortedNotices(filteredNotices, order),
+    [filteredNotices, order],
   );
-  const remainingNotices = featuredNotice
-    ? filteredNotices.filter((notice) => notice.id !== featuredNotice.id)
-    : filteredNotices;
+
+  const totalPages = Math.max(1, Math.ceil(sortedNotices.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedNotices = sortedNotices.slice(pageStart, pageStart + pageSize);
 
   const title =
     filter === "deadline" ? "마감 임박 공지사항" : "최신 학과 공지사항";
@@ -85,89 +80,88 @@ export const LatestNoticeBoard = ({
     <section className="scroll-mt-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.16em] text-emerald-700 uppercase">
-            SW CONVERGENCE COLLEGE
-          </p>
-          <h2 className="mt-1 text-3xl leading-tight font-bold tracking-tight text-slate-900">
+          <h2 className="text-3xl leading-tight font-bold tracking-tight text-slate-900">
             {title}
           </h2>
           <p className="mt-2 text-sm text-slate-500">{description}</p>
         </div>
 
-        <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1">
-          <button
-            type="button"
-            onClick={() => setView("card")}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-              resolvedView === "card"
-                ? "bg-slate-900 text-white"
-                : "text-slate-500 hover:bg-slate-100"
-            }`}
-            aria-label="카드 보기"
-            aria-pressed={resolvedView === "card"}
-          >
-            <LayoutGrid size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-              resolvedView === "list"
-                ? "bg-slate-900 text-white"
-                : "text-slate-500 hover:bg-slate-100"
-            }`}
-            aria-label="리스트 보기"
-            aria-pressed={resolvedView === "list"}
-          >
-            <List size={18} />
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOrder("latest");
+                setPage(1);
+              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                order === "latest"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              최신순
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOrder("oldest");
+                setPage(1);
+              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                order === "oldest"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              오래된 순
+            </button>
+          </div>
+
+          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setView("card");
+                setPage(1);
+              }}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                resolvedView === "card"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
+              aria-label="카드 보기"
+              aria-pressed={resolvedView === "card"}
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setView("list");
+                setPage(1);
+              }}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                resolvedView === "list"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
+              aria-label="리스트 보기"
+              aria-pressed={resolvedView === "list"}
+            >
+              <List size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {filteredNotices.length === 0 ? (
+      {sortedNotices.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-slate-500">
           표시할 공지가 없습니다.
         </div>
       ) : resolvedView === "card" ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4">
-          {featuredNotice && (
-            <Link
-              to={ROUTES.noticeDetail(departmentId, featuredNotice.id)}
-              className="group flex h-[300px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-[#2046FF]/30 hover:shadow-lg hover:shadow-[#2046FF]/10 xl:col-span-2"
-            >
-              <div>
-                <div className="mb-5 flex items-center justify-between">
-                  <span
-                    className={`rounded-lg border px-3 py-1 text-xs font-bold ${getCategoryTone(featuredNotice.category)}`}
-                  >
-                    {featuredNotice.category}
-                  </span>
-                  {isDeadlineSoon(featuredNotice) && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-600">
-                      <Clock3 size={14} />
-                      D-{featuredNotice.dDay} 마감임박
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="line-clamp-2 text-3xl leading-tight font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-[#2046FF]">
-                  {featuredNotice.title}
-                </h3>
-
-                <p className="mt-3 line-clamp-2 text-sm text-slate-600">
-                  {featuredNotice.summary ??
-                    "마감이 임박한 공지입니다. 자세한 내용을 확인해 제출 일정을 놓치지 마세요."}
-                </p>
-              </div>
-
-              <div className="mt-6 flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <Clock3 size={14} />
-                {featuredNotice.date}
-              </div>
-            </Link>
-          )}
-
-          {remainingNotices.map((notice) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {pagedNotices.map((notice) => (
             <NoticeCard
               key={notice.id}
               notice={notice}
@@ -177,41 +171,13 @@ export const LatestNoticeBoard = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {featuredNotice && (
-            <Link
-              to={ROUTES.noticeDetail(departmentId, featuredNotice.id)}
-              className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-[#2046FF]/30 hover:shadow-lg hover:shadow-[#2046FF]/10"
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <span
-                  className={`rounded-lg border px-3 py-1 text-xs font-bold ${getCategoryTone(featuredNotice.category)}`}
-                >
-                  {featuredNotice.category}
-                </span>
-                {isDeadlineSoon(featuredNotice) && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-600">
-                    <Clock3 size={14} />
-                    D-{featuredNotice.dDay} 마감임박
-                  </span>
-                )}
-              </div>
-              <h3 className="line-clamp-2 text-2xl leading-tight font-extrabold text-slate-900 transition-colors group-hover:text-[#2046FF]">
-                {featuredNotice.title}
-              </h3>
-              <p className="mt-2 line-clamp-2 text-sm text-slate-600">
-                {featuredNotice.summary ??
-                  "마감이 임박한 공지입니다. 자세한 내용을 확인해 제출 일정을 놓치지 마세요."}
-              </p>
-            </Link>
-          )}
-
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            {remainingNotices.map((notice, index) => (
+            {pagedNotices.map((notice, index) => (
               <Link
                 key={notice.id}
                 to={ROUTES.noticeDetail(departmentId, notice.id)}
                 className={`group flex items-center justify-between px-5 py-4 transition-colors hover:bg-slate-50 ${
-                  index < remainingNotices.length - 1
+                  index < pagedNotices.length - 1
                     ? "border-b border-slate-100"
                     : ""
                 }`}
@@ -240,6 +206,45 @@ export const LatestNoticeBoard = ({
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {sortedNotices.length > pageSize && (
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition-colors enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            이전
+          </button>
+
+          {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+            (pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setPage(pageNumber)}
+                className={`h-8 w-8 rounded-md text-sm font-semibold transition-colors ${
+                  pageNumber === currentPage
+                    ? "bg-[#2046FF] text-white"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            ),
+          )}
+
+          <button
+            type="button"
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition-colors enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            다음
+          </button>
         </div>
       )}
     </section>

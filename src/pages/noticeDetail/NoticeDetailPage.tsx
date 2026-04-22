@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import { ChevronRight } from "lucide-react";
@@ -19,6 +20,10 @@ export const NoticeDetailPage = () => {
   const parsedNoticeId = Number.parseInt(noticeId, 10);
   const hasValidNoticeId =
     Number.isFinite(parsedNoticeId) && parsedNoticeId > 0;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [noticeId]);
 
   const {
     data: noticeDetail,

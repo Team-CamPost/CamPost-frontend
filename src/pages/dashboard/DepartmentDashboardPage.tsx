@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { HeroBannerCarousel } from "../../features/dashboard/components/HeroBannerCarousel";
@@ -29,6 +30,12 @@ export const DepartmentDashboardPage = () => {
         ? "recent"
         : null;
   const showHeroBanner = activeFilter === null;
+
+  useEffect(() => {
+    if (activeFilter === null) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, [activeFilter]);
 
   const {
     data: latestNotices = [],
