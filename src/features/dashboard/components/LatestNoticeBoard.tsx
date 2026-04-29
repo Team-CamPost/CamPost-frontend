@@ -84,17 +84,15 @@ const getSearchFilteredNotices = (
     return notices;
   }
 
-  return notices.filter((notice) =>
-    [notice.title].some((value) => {
-      const normalizedValue = value.toLowerCase();
-      const compactValue = normalizedValue.replace(/[.\-_\s/]/g, "");
+  return notices.filter((notice) => {
+    const normalizedTitle = notice.title.toLowerCase();
+    const compactTitle = normalizedTitle.replace(/[.\-_\s/]/g, "");
 
-      return (
-        normalizedValue.includes(normalizedKeyword) ||
-        compactValue.includes(compactKeyword)
-      );
-    }),
-  );
+    return (
+      normalizedTitle.includes(normalizedKeyword) ||
+      (compactKeyword.length > 0 && compactTitle.includes(compactKeyword))
+    );
+  });
 };
 
 const getSortedNotices = (notices: LatestNoticeItem[], order: NoticeOrder) => {
@@ -331,7 +329,7 @@ export const LatestNoticeBoard = ({
 
       {sortedNotices.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-slate-500">
-          표시할 공지가 없습니다.
+          검색된 공지가 없습니다.
         </div>
       ) : resolvedView === "card" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
