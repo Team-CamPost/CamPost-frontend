@@ -1,6 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Check, Clock3, LayoutGrid, List, Paperclip, X } from "lucide-react";
+import {
+  Check,
+  Clock3,
+  LayoutGrid,
+  List,
+  Paperclip,
+  Search,
+  X,
+} from "lucide-react";
 import { NoticeCard } from "./NoticeCard";
 import { ROUTES } from "../../../app/router/paths";
 import {
@@ -65,6 +73,30 @@ const getCategoryFilteredNotices = (
   );
 };
 
+const getSearchFilteredNotices = (
+  notices: LatestNoticeItem[],
+  searchKeyword: string,
+) => {
+  const normalizedKeyword = searchKeyword.trim().toLowerCase();
+  const compactKeyword = normalizedKeyword.replace(/[.\-_\s/]/g, "");
+
+  if (!normalizedKeyword) {
+    return notices;
+  }
+
+  return notices.filter((notice) =>
+    [notice.title].some((value) => {
+      const normalizedValue = value.toLowerCase();
+      const compactValue = normalizedValue.replace(/[.\-_\s/]/g, "");
+
+      return (
+        normalizedValue.includes(normalizedKeyword) ||
+        compactValue.includes(compactKeyword)
+      );
+    }),
+  );
+};
+
 const getSortedNotices = (notices: LatestNoticeItem[], order: NoticeOrder) => {
   if (order === "oldest") {
     return [...notices].sort(
@@ -86,6 +118,8 @@ export const LatestNoticeBoard = ({
   const [order, setOrder] = useState<NoticeOrder>("latest");
   const [page, setPage] = useState(1);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
   const resolvedView = view;
   const pageSize = 12;
 
@@ -125,9 +159,14 @@ export const LatestNoticeBoard = ({
     [filterScopedNotices, selectedCategories],
   );
 
+  const searchedNotices = useMemo(
+    () => getSearchFilteredNotices(filteredNotices, searchKeyword),
+    [filteredNotices, searchKeyword],
+  );
+
   const sortedNotices = useMemo(
-    () => getSortedNotices(filteredNotices, order),
-    [filteredNotices, order],
+    () => getSortedNotices(searchedNotices, order),
+    [searchedNotices, order],
   );
 
   const totalPages = Math.max(1, Math.ceil(sortedNotices.length / pageSize));
@@ -153,6 +192,22 @@ export const LatestNoticeBoard = ({
 
   const handleCategoryClear = () => {
     setSelectedCategories([]);
+    setPage(1);
+  };
+
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(event.target.value);
+  };
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearchKeyword(searchInput.trim());
+    setPage(1);
+  };
+
+  const handleSearchClear = () => {
+    setSearchInput("");
+    setSearchKeyword("");
     setPage(1);
   };
 
@@ -368,6 +423,52 @@ export const LatestNoticeBoard = ({
           </button>
         </div>
       )}
+
+      <form
+        onSubmit={handleSearchSubmit}
+        className="mt-6 flex justify-center"
+      >
+        <div className="flex w-full max-w-xl items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <label
+              htmlFor="notice-board-search"
+              className="sr-only"
+            >
+              공지 검색
+            </label>
+            <Search
+              size={18}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              id="notice-board-search"
+              type="text"
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder="공지 검색"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-10 text-sm text-slate-800 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-3 focus:ring-[#2046FF]/10"
+            />
+            {(searchInput || searchKeyword) && (
+              <button
+                type="button"
+                onClick={handleSearchClear}
+                className="absolute top-1/2 right-2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-[#2046FF] transition-colors hover:bg-[#2046FF]/10"
+                aria-label="검색어 지우기"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#2046FF] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1838d8] focus:ring-3 focus:ring-[#2046FF]/20 focus:outline-none"
+          >
+            <Search size={16} />
+            검색
+          </button>
+        </div>
+      </form>
     </section>
   );
 };
