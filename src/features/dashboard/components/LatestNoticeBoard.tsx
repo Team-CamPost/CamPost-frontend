@@ -95,9 +95,10 @@ export const LatestNoticeBoard = ({
   );
 
   const categoryOptions = useMemo(() => {
-    const categorySet = new Set(
-      filterScopedNotices.map((notice) => notice.category),
-    );
+    const categorySet = new Set([
+      ...filterScopedNotices.map((notice) => notice.category),
+      ...selectedCategories,
+    ]);
 
     return [...categorySet].sort((a, b) => {
       const aIndex = CATEGORY_ORDER.indexOf(a);
@@ -117,7 +118,7 @@ export const LatestNoticeBoard = ({
 
       return aIndex - bIndex;
     });
-  }, [filterScopedNotices]);
+  }, [filterScopedNotices, selectedCategories]);
 
   const filteredNotices = useMemo(
     () => getCategoryFilteredNotices(filterScopedNotices, selectedCategories),
@@ -166,7 +167,7 @@ export const LatestNoticeBoard = ({
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {categoryOptions.length > 0 && (
+          {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
             <div
               className="flex flex-wrap items-center justify-end gap-1"
               aria-label="카테고리 필터"
