@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Clock3, LayoutGrid, List, Paperclip } from "lucide-react";
+import { Check, Clock3, LayoutGrid, List, Paperclip, X } from "lucide-react";
 import { NoticeCard } from "./NoticeCard";
 import { ROUTES } from "../../../app/router/paths";
 import {
@@ -15,6 +15,21 @@ import type { NoticeCardData } from "../types/notice";
 type NoticeFilter = "recent" | "deadline";
 type NoticeView = "card" | "list";
 type NoticeOrder = "latest" | "oldest";
+
+const CATEGORY_ORDER = [
+  "채용정보",
+  "학사공지",
+  "행사 및 대회",
+  "장학",
+  "장학금",
+  "채용",
+  "취업",
+  "학사",
+  "행사",
+  "대회",
+  "일반",
+  "미분류",
+];
 
 interface LatestNoticeItem extends NoticeCardData {
   summary?: string;
@@ -37,6 +52,19 @@ const getFilteredNotices = (
   return [...notices];
 };
 
+const getCategoryFilteredNotices = (
+  notices: LatestNoticeItem[],
+  selectedCategories: string[],
+) => {
+  if (selectedCategories.length === 0) {
+    return notices;
+  }
+
+  return notices.filter((notice) =>
+    selectedCategories.includes(notice.category),
+  );
+};
+
 const getSortedNotices = (notices: LatestNoticeItem[], order: NoticeOrder) => {
   if (order === "oldest") {
     return [...notices].sort(
@@ -57,13 +85,45 @@ export const LatestNoticeBoard = ({
   const [view, setView] = useState<NoticeView>("card");
   const [order, setOrder] = useState<NoticeOrder>("latest");
   const [page, setPage] = useState(1);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const resolvedView = view;
   const pageSize = 12;
 
-  const filteredNotices = useMemo(
+  const filterScopedNotices = useMemo(
     () => getFilteredNotices(notices, filter),
     [notices, filter],
   );
+
+  const categoryOptions = useMemo(() => {
+    const categorySet = new Set(
+      filterScopedNotices.map((notice) => notice.category),
+    );
+
+    return [...categorySet].sort((a, b) => {
+      const aIndex = CATEGORY_ORDER.indexOf(a);
+      const bIndex = CATEGORY_ORDER.indexOf(b);
+
+      if (aIndex === -1 && bIndex === -1) {
+        return a.localeCompare(b, "ko");
+      }
+
+      if (aIndex === -1) {
+        return 1;
+      }
+
+      if (bIndex === -1) {
+        return -1;
+      }
+
+      return aIndex - bIndex;
+    });
+  }, [filterScopedNotices]);
+
+  const filteredNotices = useMemo(
+    () => getCategoryFilteredNotices(filterScopedNotices, selectedCategories),
+    [filterScopedNotices, selectedCategories],
+  );
+
   const sortedNotices = useMemo(
     () => getSortedNotices(filteredNotices, order),
     [filteredNotices, order],
@@ -81,6 +141,20 @@ export const LatestNoticeBoard = ({
       ? "마감이 가까운 공지를 우선 확인하세요."
       : "최근 등록된 공지를 빠르게 확인하세요.";
 
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories((prevCategories) =>
+      prevCategories.includes(category)
+        ? prevCategories.filter((prevCategory) => prevCategory !== category)
+        : [...prevCategories, category],
+    );
+    setPage(1);
+  };
+
+  const handleCategoryClear = () => {
+    setSelectedCategories([]);
+    setPage(1);
+  };
+
   return (
     <section className="scroll-mt-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -91,7 +165,46 @@ export const LatestNoticeBoard = ({
           <p className="mt-2 text-sm text-slate-500">{description}</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {categoryOptions.length > 0 && (
+            <div
+              className="flex flex-wrap items-center justify-end gap-1"
+              aria-label="카테고리 필터"
+            >
+              {categoryOptions.map((category) => {
+                const isSelected = selectedCategories.includes(category);
+
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => handleCategoryToggle(category)}
+                    className={`inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                      isSelected
+                        ? "border-[#2046FF] bg-[#2046FF] text-white"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                    aria-pressed={isSelected}
+                  >
+                    {isSelected && <Check size={14} />}
+                    {category}
+                  </button>
+                );
+              })}
+
+              {selectedCategories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleCategoryClear}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
+                  aria-label="카테고리 필터 초기화"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1">
             <button
               type="button"
