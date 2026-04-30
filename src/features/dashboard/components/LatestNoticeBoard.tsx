@@ -211,15 +211,56 @@ export const LatestNoticeBoard = ({
 
   return (
     <section className="scroll-mt-24">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5">
         <div>
           <h2 className="text-3xl leading-tight font-bold tracking-tight text-slate-900">
             {title}
           </h2>
           <p className="mt-2 text-sm text-slate-500">{description}</p>
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
+          <div
+            className="flex flex-wrap items-center gap-1.5"
+            aria-label="카테고리 필터"
+          >
+            {categoryOptions.map((category) => {
+              const isSelected = selectedCategories.includes(category);
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => handleCategoryToggle(category)}
+                  className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold transition-colors ${
+                    isSelected
+                      ? "border-[#2046FF] bg-[#2046FF] text-white"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                  aria-pressed={isSelected}
+                >
+                  {isSelected && <Check size={12} />}
+                  {category}
+                </button>
+              );
+            })}
+
+            {selectedCategories.length > 0 && (
+              <button
+                type="button"
+                onClick={handleCategoryClear}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
+                aria-label="카테고리 필터 초기화"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto">
           <form
             onSubmit={handleSearchSubmit}
             className="flex w-full max-w-sm items-center gap-2 sm:w-auto"
@@ -331,45 +372,6 @@ export const LatestNoticeBoard = ({
           </div>
         </div>
       </div>
-
-      {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
-        <div
-          className="mb-4 flex flex-wrap items-center gap-1.5"
-          aria-label="카테고리 필터"
-        >
-          {categoryOptions.map((category) => {
-            const isSelected = selectedCategories.includes(category);
-
-            return (
-              <button
-                key={category}
-                type="button"
-                onClick={() => handleCategoryToggle(category)}
-                className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold transition-colors ${
-                  isSelected
-                    ? "border-[#2046FF] bg-[#2046FF] text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-                aria-pressed={isSelected}
-              >
-                {isSelected && <Check size={12} />}
-                {category}
-              </button>
-            );
-          })}
-
-          {selectedCategories.length > 0 && (
-            <button
-              type="button"
-              onClick={handleCategoryClear}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
-              aria-label="카테고리 필터 초기화"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      )}
 
       {sortedNotices.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-slate-500">
