@@ -220,44 +220,49 @@ export const LatestNoticeBoard = ({
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
-            <div
-              className="flex flex-wrap items-center justify-end gap-1"
-              aria-label="카테고리 필터"
-            >
-              {categoryOptions.map((category) => {
-                const isSelected = selectedCategories.includes(category);
-
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => handleCategoryToggle(category)}
-                    className={`inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-xs font-semibold transition-colors ${
-                      isSelected
-                        ? "border-[#2046FF] bg-[#2046FF] text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                    aria-pressed={isSelected}
-                  >
-                    {isSelected && <Check size={14} />}
-                    {category}
-                  </button>
-                );
-              })}
-
-              {selectedCategories.length > 0 && (
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex w-full max-w-sm items-center gap-2 sm:w-auto"
+          >
+            <div className="relative min-w-0 flex-1 sm:w-64">
+              <label
+                htmlFor="notice-board-search"
+                className="sr-only"
+              >
+                공지 검색
+              </label>
+              <Search
+                size={16}
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                id="notice-board-search"
+                type="text"
+                value={searchInput}
+                onChange={handleSearchChange}
+                placeholder="공지 검색"
+                className="h-9 w-full rounded-xl border border-slate-200 bg-white pr-9 pl-9 text-sm text-slate-800 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-3 focus:ring-[#2046FF]/10"
+              />
+              {(searchInput || searchKeyword) && (
                 <button
                   type="button"
-                  onClick={handleCategoryClear}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
-                  aria-label="카테고리 필터 초기화"
+                  onClick={handleSearchClear}
+                  className="absolute top-1/2 right-2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#2046FF] transition-colors hover:bg-[#2046FF]/10"
+                  aria-label="검색어 지우기"
                 >
-                  <X size={16} />
+                  <X size={14} />
                 </button>
               )}
             </div>
-          )}
+
+            <button
+              type="submit"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#2046FF] px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#1838d8] focus:ring-3 focus:ring-[#2046FF]/20 focus:outline-none"
+            >
+              <Search size={14} />
+              검색
+            </button>
+          </form>
 
           <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1">
             <button
@@ -326,6 +331,45 @@ export const LatestNoticeBoard = ({
           </div>
         </div>
       </div>
+
+      {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
+        <div
+          className="mb-4 flex flex-wrap items-center gap-1.5"
+          aria-label="카테고리 필터"
+        >
+          {categoryOptions.map((category) => {
+            const isSelected = selectedCategories.includes(category);
+
+            return (
+              <button
+                key={category}
+                type="button"
+                onClick={() => handleCategoryToggle(category)}
+                className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold transition-colors ${
+                  isSelected
+                    ? "border-[#2046FF] bg-[#2046FF] text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+                aria-pressed={isSelected}
+              >
+                {isSelected && <Check size={12} />}
+                {category}
+              </button>
+            );
+          })}
+
+          {selectedCategories.length > 0 && (
+            <button
+              type="button"
+              onClick={handleCategoryClear}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
+              aria-label="카테고리 필터 초기화"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       {sortedNotices.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-slate-500">
@@ -421,52 +465,6 @@ export const LatestNoticeBoard = ({
           </button>
         </div>
       )}
-
-      <form
-        onSubmit={handleSearchSubmit}
-        className="mt-6 flex justify-center"
-      >
-        <div className="flex w-full max-w-xl items-center gap-2">
-          <div className="relative min-w-0 flex-1">
-            <label
-              htmlFor="notice-board-search"
-              className="sr-only"
-            >
-              공지 검색
-            </label>
-            <Search
-              size={18}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              id="notice-board-search"
-              type="text"
-              value={searchInput}
-              onChange={handleSearchChange}
-              placeholder="공지 검색"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-10 text-sm text-slate-800 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-3 focus:ring-[#2046FF]/10"
-            />
-            {(searchInput || searchKeyword) && (
-              <button
-                type="button"
-                onClick={handleSearchClear}
-                className="absolute top-1/2 right-2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-[#2046FF] transition-colors hover:bg-[#2046FF]/10"
-                aria-label="검색어 지우기"
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#2046FF] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1838d8] focus:ring-3 focus:ring-[#2046FF]/20 focus:outline-none"
-          >
-            <Search size={16} />
-            검색
-          </button>
-        </div>
-      </form>
     </section>
   );
 };
