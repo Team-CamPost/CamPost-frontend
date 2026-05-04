@@ -1,6 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Check, Clock3, LayoutGrid, List, Paperclip, X } from "lucide-react";
+import {
+  Check,
+  Clock3,
+  LayoutGrid,
+  List,
+  Paperclip,
+  Search,
+  X,
+} from "lucide-react";
 import { NoticeCard } from "./NoticeCard";
 import { ROUTES } from "../../../app/router/paths";
 import {
@@ -65,6 +73,28 @@ const getCategoryFilteredNotices = (
   );
 };
 
+const getSearchFilteredNotices = (
+  notices: LatestNoticeItem[],
+  searchKeyword: string,
+) => {
+  const normalizedKeyword = searchKeyword.trim().toLowerCase();
+  const compactKeyword = normalizedKeyword.replace(/[.\-_\s/]/g, "");
+
+  if (!normalizedKeyword) {
+    return notices;
+  }
+
+  return notices.filter((notice) => {
+    const normalizedTitle = notice.title.toLowerCase();
+    const compactTitle = normalizedTitle.replace(/[.\-_\s/]/g, "");
+
+    return (
+      normalizedTitle.includes(normalizedKeyword) ||
+      (compactKeyword.length > 0 && compactTitle.includes(compactKeyword))
+    );
+  });
+};
+
 const getSortedNotices = (notices: LatestNoticeItem[], order: NoticeOrder) => {
   if (order === "oldest") {
     return [...notices].sort(
@@ -86,6 +116,8 @@ export const LatestNoticeBoard = ({
   const [order, setOrder] = useState<NoticeOrder>("latest");
   const [page, setPage] = useState(1);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
   const resolvedView = view;
   const pageSize = 12;
 
@@ -125,9 +157,14 @@ export const LatestNoticeBoard = ({
     [filterScopedNotices, selectedCategories],
   );
 
+  const searchedNotices = useMemo(
+    () => getSearchFilteredNotices(filteredNotices, searchKeyword),
+    [filteredNotices, searchKeyword],
+  );
+
   const sortedNotices = useMemo(
-    () => getSortedNotices(filteredNotices, order),
-    [filteredNotices, order],
+    () => getSortedNotices(searchedNotices, order),
+    [searchedNotices, order],
   );
 
   const totalPages = Math.max(1, Math.ceil(sortedNotices.length / pageSize));
@@ -156,55 +193,117 @@ export const LatestNoticeBoard = ({
     setPage(1);
   };
 
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(event.target.value);
+  };
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearchKeyword(searchInput.trim());
+    setPage(1);
+  };
+
+  const handleSearchClear = () => {
+    setSearchInput("");
+    setSearchKeyword("");
+    setPage(1);
+  };
+
   return (
     <section className="scroll-mt-24">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5">
         <div>
           <h2 className="text-3xl leading-tight font-bold tracking-tight text-slate-900">
             {title}
           </h2>
           <p className="mt-2 text-sm text-slate-500">{description}</p>
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
-            <div
-              className="flex flex-wrap items-center justify-end gap-1"
-              aria-label="카테고리 필터"
-            >
-              {categoryOptions.map((category) => {
-                const isSelected = selectedCategories.includes(category);
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {(categoryOptions.length > 0 || selectedCategories.length > 0) && (
+          <div
+            className="flex flex-wrap items-center gap-1.5"
+            aria-label="카테고리 필터"
+          >
+            {categoryOptions.map((category) => {
+              const isSelected = selectedCategories.includes(category);
 
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => handleCategoryToggle(category)}
-                    className={`inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-xs font-semibold transition-colors ${
-                      isSelected
-                        ? "border-[#2046FF] bg-[#2046FF] text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                    aria-pressed={isSelected}
-                  >
-                    {isSelected && <Check size={14} />}
-                    {category}
-                  </button>
-                );
-              })}
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => handleCategoryToggle(category)}
+                  className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold transition-colors ${
+                    isSelected
+                      ? "border-[#2046FF] bg-[#2046FF] text-white"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                  aria-pressed={isSelected}
+                >
+                  {isSelected && <Check size={12} />}
+                  {category}
+                </button>
+              );
+            })}
 
-              {selectedCategories.length > 0 && (
+            {selectedCategories.length > 0 && (
+              <button
+                type="button"
+                onClick={handleCategoryClear}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
+                aria-label="카테고리 필터 초기화"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex w-full max-w-sm items-center gap-2 sm:w-auto"
+          >
+            <div className="relative min-w-0 flex-1 sm:w-64">
+              <label
+                htmlFor="notice-board-search"
+                className="sr-only"
+              >
+                공지 검색
+              </label>
+              <Search
+                size={16}
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                id="notice-board-search"
+                type="text"
+                value={searchInput}
+                onChange={handleSearchChange}
+                placeholder="공지 검색"
+                className="h-9 w-full rounded-xl border border-slate-200 bg-white pr-9 pl-9 text-sm text-slate-800 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-3 focus:ring-[#2046FF]/10"
+              />
+              {(searchInput || searchKeyword) && (
                 <button
                   type="button"
-                  onClick={handleCategoryClear}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
-                  aria-label="카테고리 필터 초기화"
+                  onClick={handleSearchClear}
+                  className="absolute top-1/2 right-2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#2046FF] transition-colors hover:bg-[#2046FF]/10"
+                  aria-label="검색어 지우기"
                 >
-                  <X size={16} />
+                  <X size={14} />
                 </button>
               )}
             </div>
-          )}
+
+            <button
+              type="submit"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#2046FF] px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#1838d8] focus:ring-3 focus:ring-[#2046FF]/20 focus:outline-none"
+            >
+              <Search size={14} />
+              검색
+            </button>
+          </form>
 
           <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1">
             <button
@@ -276,7 +375,7 @@ export const LatestNoticeBoard = ({
 
       {sortedNotices.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-slate-500">
-          표시할 공지가 없습니다.
+          검색된 공지가 없습니다.
         </div>
       ) : resolvedView === "card" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
