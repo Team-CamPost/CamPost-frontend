@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { LogIn, UserPlus } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ export const LoginPage = () => {
   const { login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const loginTimerRef = useRef<number | null>(null);
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,6 +17,14 @@ export const LoginPage = () => {
 
   const params = new URLSearchParams(location.search);
   const redirectTo = params.get("redirectTo") || ROUTES.home;
+
+  useEffect(() => {
+    return () => {
+      if (loginTimerRef.current) {
+        window.clearTimeout(loginTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -25,9 +34,13 @@ export const LoginPage = () => {
       return;
     }
 
+    if (loginTimerRef.current) {
+      window.clearTimeout(loginTimerRef.current);
+    }
+
     setIsSubmitting(true);
     login();
-    window.setTimeout(() => {
+    loginTimerRef.current = window.setTimeout(() => {
       setIsSubmitting(false);
       navigate(redirectTo, { replace: true });
     }, 400);
@@ -49,12 +62,16 @@ export const LoginPage = () => {
           noValidate
           onSubmit={handleLogin}
         >
-          <label className="block">
+          <label
+            className="block"
+            htmlFor="login-id"
+          >
             <span className="mb-1.5 block text-sm font-medium text-slate-700">
               아이디
             </span>
             <input
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              id="login-id"
               onChange={(event) => {
                 setLoginId(event.target.value);
                 setError("");
@@ -65,12 +82,16 @@ export const LoginPage = () => {
             />
           </label>
 
-          <label className="block">
+          <label
+            className="block"
+            htmlFor="login-password"
+          >
             <span className="mb-1.5 block text-sm font-medium text-slate-700">
               비밀번호
             </span>
             <input
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              id="login-password"
               onChange={(event) => {
                 setPassword(event.target.value);
                 setError("");

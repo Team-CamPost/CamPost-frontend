@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FocusEvent, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Loader2, UserPlus } from "lucide-react";
@@ -22,19 +22,32 @@ const initialForm: SignupForm = {
   passwordConfirm: "",
 };
 
+const requiredMessages: Record<keyof SignupForm, string> = {
+  username: "아이디를 입력해주세요.",
+  email: "이메일을 입력해주세요.",
+  emailCode: "이메일 인증번호를 입력해주세요.",
+  password: "비밀번호를 입력해주세요.",
+  passwordConfirm: "비밀번호 확인을 입력해주세요.",
+};
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const usernamePattern = /^[A-Za-z0-9_]{4,20}$/;
+const usernamePattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$/;
 const emailCodePattern = /^\d{6}$/;
 
-const validateField = (field: keyof SignupForm, form: SignupForm) => {
+const validateField = (
+  field: keyof SignupForm,
+  form: SignupForm,
+  options: { required?: boolean } = {},
+) => {
+  const { required = true } = options;
   const value = form[field];
 
   if (!value.trim()) {
-    return "";
+    return required ? requiredMessages[field] : "";
   }
 
   if (field === "username" && !usernamePattern.test(form.username)) {
-    return "아이디는 영문, 숫자, _ 조합 4~20자로 입력해주세요.";
+    return "아이디는 영문과 숫자를 모두 포함해 6~20자로 입력해주세요.";
   }
 
   if (field === "email" && !emailPattern.test(form.email)) {
@@ -65,37 +78,21 @@ const validateSubmitErrors = (form: SignupForm) => {
 
   Object.keys(form).forEach((field) => {
     const typedField = field as keyof SignupForm;
-    const fieldError = validateField(typedField, form);
+    const fieldError = validateField(typedField, form, {
+      required:
+        typedField !== "passwordConfirm" || Boolean(form.password.trim()),
+    });
 
     if (fieldError) {
       nextErrors[typedField] = fieldError;
     }
   });
 
-  if (!form.username.trim()) {
-    nextErrors.username = "아이디를 입력해주세요.";
-  }
-
-  if (!form.email.trim()) {
-    nextErrors.email = "이메일을 입력해주세요.";
-  }
-
-  if (!form.emailCode.trim()) {
-    nextErrors.emailCode = "이메일 인증번호를 입력해주세요.";
-  }
-
-  if (!form.password) {
-    nextErrors.password = "비밀번호를 입력해주세요.";
-  }
-
-  if (form.password && !form.passwordConfirm) {
-    nextErrors.passwordConfirm = "비밀번호 확인을 입력해주세요.";
-  }
-
   return nextErrors;
 };
 
 export const SignupPage = () => {
+  const signupTimerRef = useRef<number | null>(null);
   const [form, setForm] = useState<SignupForm>(initialForm);
   const [errors, setErrors] = useState<SignupErrors>({});
   const [usernameCheckMessage, setUsernameCheckMessage] = useState("");
@@ -103,6 +100,14 @@ export const SignupPage = () => {
   const [emailCodeCheckMessage, setEmailCodeCheckMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (signupTimerRef.current) {
+        window.clearTimeout(signupTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleChange =
     (field: keyof SignupForm) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +131,7 @@ export const SignupPage = () => {
   const handleBlur =
     (field: keyof SignupForm) => (event: FocusEvent<HTMLInputElement>) => {
       const nextForm = { ...form, [field]: event.target.value };
-      const fieldError = validateField(field, nextForm);
+      const fieldError = validateField(field, nextForm, { required: false });
 
       setErrors((prevErrors) => ({ ...prevErrors, [field]: fieldError }));
     };
@@ -186,8 +191,12 @@ export const SignupPage = () => {
       return;
     }
 
+    if (signupTimerRef.current) {
+      window.clearTimeout(signupTimerRef.current);
+    }
+
     setIsSubmitting(true);
-    window.setTimeout(() => {
+    signupTimerRef.current = window.setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
     }, 700);
