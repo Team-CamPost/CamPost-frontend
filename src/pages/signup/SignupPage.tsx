@@ -33,6 +33,7 @@ const requiredMessages: Record<keyof SignupForm, string> = {
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernamePattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$/;
 const emailCodePattern = /^\d{6}$/;
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 const validateField = (
   field: keyof SignupForm,
@@ -58,8 +59,8 @@ const validateField = (
     return "인증번호 6자리를 입력해주세요.";
   }
 
-  if (field === "password" && form.password.length < 8) {
-    return "비밀번호는 8자 이상이어야 합니다.";
+  if (field === "password" && !passwordPattern.test(form.password)) {
+    return "비밀번호는 영문과 숫자를 모두 포함해 8자 이상으로 입력해주세요.";
   }
 
   if (
