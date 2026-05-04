@@ -1,0 +1,419 @@
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, FocusEvent, FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { CheckCircle2, Loader2, UserPlus } from "lucide-react";
+import { ROUTES } from "../../app/router/paths";
+
+type SignupForm = {
+  username: string;
+  email: string;
+  emailCode: string;
+  password: string;
+  passwordConfirm: string;
+};
+
+type SignupErrors = Partial<Record<keyof SignupForm, string>>;
+
+const initialForm: SignupForm = {
+  username: "",
+  email: "",
+  emailCode: "",
+  password: "",
+  passwordConfirm: "",
+};
+
+const requiredMessages: Record<keyof SignupForm, string> = {
+  username: "아이디를 입력해주세요.",
+  email: "이메일을 입력해주세요.",
+  emailCode: "이메일 인증번호를 입력해주세요.",
+  password: "비밀번호를 입력해주세요.",
+  passwordConfirm: "비밀번호 확인을 입력해주세요.",
+};
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const usernamePattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$/;
+const emailCodePattern = /^\d{6}$/;
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+const validateField = (
+  field: keyof SignupForm,
+  form: SignupForm,
+  options: { required?: boolean } = {},
+) => {
+  const { required = true } = options;
+  const value = form[field];
+
+  if (!value.trim()) {
+    return required ? requiredMessages[field] : "";
+  }
+
+  if (field === "username" && !usernamePattern.test(form.username)) {
+    return "아이디는 영문과 숫자를 모두 포함해 6~20자로 입력해주세요.";
+  }
+
+  if (field === "email" && !emailPattern.test(form.email)) {
+    return "올바른 이메일 형식으로 입력해주세요.";
+  }
+
+  if (field === "emailCode" && !emailCodePattern.test(form.emailCode)) {
+    return "인증번호 6자리를 입력해주세요.";
+  }
+
+  if (field === "password" && !passwordPattern.test(form.password)) {
+    return "비밀번호는 영문과 숫자를 모두 포함해 8자 이상으로 입력해주세요.";
+  }
+
+  if (
+    field === "passwordConfirm" &&
+    form.password &&
+    form.password !== form.passwordConfirm
+  ) {
+    return "비밀번호가 일치하지 않습니다.";
+  }
+
+  return "";
+};
+
+const validateSubmitErrors = (form: SignupForm) => {
+  const nextErrors: SignupErrors = {};
+
+  Object.keys(form).forEach((field) => {
+    const typedField = field as keyof SignupForm;
+    const fieldError = validateField(typedField, form, {
+      required:
+        typedField !== "passwordConfirm" || Boolean(form.password.trim()),
+    });
+
+    if (fieldError) {
+      nextErrors[typedField] = fieldError;
+    }
+  });
+
+  return nextErrors;
+};
+
+export const SignupPage = () => {
+  const signupTimerRef = useRef<number | null>(null);
+  const [form, setForm] = useState<SignupForm>(initialForm);
+  const [errors, setErrors] = useState<SignupErrors>({});
+  const [usernameCheckMessage, setUsernameCheckMessage] = useState("");
+  const [emailAuthMessage, setEmailAuthMessage] = useState("");
+  const [emailCodeCheckMessage, setEmailCodeCheckMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (signupTimerRef.current) {
+        window.clearTimeout(signupTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleChange =
+    (field: keyof SignupForm) => (event: ChangeEvent<HTMLInputElement>) => {
+      setForm((prevForm) => ({ ...prevForm, [field]: event.target.value }));
+      setErrors((prevErrors) => ({ ...prevErrors, [field]: undefined }));
+      setIsSubmitted(false);
+
+      if (field === "username") {
+        setUsernameCheckMessage("");
+      }
+
+      if (field === "email") {
+        setEmailAuthMessage("");
+      }
+
+      if (field === "emailCode") {
+        setEmailCodeCheckMessage("");
+      }
+    };
+
+  const handleBlur =
+    (field: keyof SignupForm) => (event: FocusEvent<HTMLInputElement>) => {
+      const nextForm = { ...form, [field]: event.target.value };
+      const fieldError = validateField(field, nextForm, { required: false });
+
+      setErrors((prevErrors) => ({ ...prevErrors, [field]: fieldError }));
+    };
+
+  const handleUsernameCheck = () => {
+    const fieldError = validateField("username", form);
+
+    setErrors((prevErrors) => ({ ...prevErrors, username: fieldError }));
+
+    if (!form.username.trim()) {
+      return;
+    }
+
+    if (!fieldError) {
+      setUsernameCheckMessage("사용 가능한 아이디입니다.");
+    }
+  };
+
+  const handleEmailAuth = () => {
+    const fieldError = validateField("email", form);
+
+    setErrors((prevErrors) => ({ ...prevErrors, email: fieldError }));
+
+    if (!form.email.trim()) {
+      return;
+    }
+
+    if (!fieldError) {
+      setEmailAuthMessage("인증번호를 전송했습니다.");
+    }
+  };
+
+  const handleEmailCodeCheck = () => {
+    const fieldError = validateField("emailCode", form);
+
+    setErrors((prevErrors) => ({ ...prevErrors, emailCode: fieldError }));
+
+    if (!form.emailCode.trim()) {
+      return;
+    }
+
+    if (!fieldError) {
+      setEmailCodeCheckMessage("인증번호가 확인되었습니다.");
+    }
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const validationErrors = validateSubmitErrors(form);
+    setErrors(validationErrors);
+    setUsernameCheckMessage("");
+    setEmailAuthMessage("");
+    setEmailCodeCheckMessage("");
+
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    if (signupTimerRef.current) {
+      window.clearTimeout(signupTimerRef.current);
+    }
+
+    setIsSubmitting(true);
+    signupTimerRef.current = window.setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+    }, 700);
+  };
+
+  return (
+    <section className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-4 py-10">
+      <div className="shadow-soft w-full max-w-[440px] rounded-lg border border-slate-200 bg-white p-8">
+        <div className="mb-7">
+          <p className="mb-2 text-sm font-semibold text-[#2046FF]">CamPost</p>
+          <h1 className="text-2xl font-bold text-slate-950">회원가입</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            계정 정보를 입력하고 CamPost를 시작하세요.
+          </p>
+        </div>
+
+        <form
+          className="space-y-4"
+          noValidate
+          onSubmit={handleSubmit}
+        >
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+              htmlFor="signup-username"
+            >
+              아이디
+            </label>
+            <div className="flex gap-2">
+              <input
+                className="h-11 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+                id="signup-username"
+                name="username"
+                onBlur={handleBlur("username")}
+                onChange={handleChange("username")}
+                placeholder="campost_user"
+                type="text"
+                value={form.username}
+              />
+              <button
+                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-3 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white"
+                onClick={handleUsernameCheck}
+                type="button"
+              >
+                중복확인
+              </button>
+            </div>
+            {errors.username && (
+              <span className="mt-1.5 block text-xs font-medium text-red-500">
+                {errors.username}
+              </span>
+            )}
+            {usernameCheckMessage && !errors.username && (
+              <span className="mt-1.5 block text-xs font-medium text-emerald-600">
+                {usernameCheckMessage}
+              </span>
+            )}
+          </div>
+
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+              htmlFor="signup-email"
+            >
+              이메일
+            </label>
+            <div className="flex gap-2">
+              <input
+                className="h-11 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+                id="signup-email"
+                name="email"
+                onBlur={handleBlur("email")}
+                onChange={handleChange("email")}
+                placeholder="campost@example.com"
+                type="email"
+                value={form.email}
+              />
+              <button
+                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-4 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white"
+                onClick={handleEmailAuth}
+                type="button"
+              >
+                인증
+              </button>
+            </div>
+            {errors.email && (
+              <span className="mt-1.5 block text-xs font-medium text-red-500">
+                {errors.email}
+              </span>
+            )}
+            {emailAuthMessage && !errors.email && (
+              <span className="mt-1.5 block text-xs font-medium text-emerald-600">
+                {emailAuthMessage}
+              </span>
+            )}
+          </div>
+
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+              htmlFor="signup-email-code"
+            >
+              이메일 인증번호
+            </label>
+            <div className="flex gap-2">
+              <input
+                className="h-11 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+                id="signup-email-code"
+                inputMode="numeric"
+                name="emailCode"
+                onBlur={handleBlur("emailCode")}
+                onChange={handleChange("emailCode")}
+                placeholder="인증번호 6자리"
+                type="text"
+                value={form.emailCode}
+              />
+              <button
+                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-4 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white"
+                onClick={handleEmailCodeCheck}
+                type="button"
+              >
+                확인
+              </button>
+            </div>
+            {errors.emailCode && (
+              <span className="mt-1.5 block text-xs font-medium text-red-500">
+                {errors.emailCode}
+              </span>
+            )}
+            {emailCodeCheckMessage && !errors.emailCode && (
+              <span className="mt-1.5 block text-xs font-medium text-emerald-600">
+                {emailCodeCheckMessage}
+              </span>
+            )}
+          </div>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">
+              비밀번호
+            </span>
+            <input
+              className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              name="password"
+              onBlur={handleBlur("password")}
+              onChange={handleChange("password")}
+              placeholder="8자 이상 입력"
+              type="password"
+              value={form.password}
+            />
+            {errors.password && (
+              <span className="mt-1.5 block text-xs font-medium text-red-500">
+                {errors.password}
+              </span>
+            )}
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">
+              비밀번호 확인
+            </span>
+            <input
+              className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              name="passwordConfirm"
+              onBlur={handleBlur("passwordConfirm")}
+              onChange={handleChange("passwordConfirm")}
+              placeholder="비밀번호 재입력"
+              type="password"
+              value={form.passwordConfirm}
+            />
+            {errors.passwordConfirm && (
+              <span className="mt-1.5 block text-xs font-medium text-red-500">
+                {errors.passwordConfirm}
+              </span>
+            )}
+          </label>
+
+          <button
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#2046FF] text-sm font-semibold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
+            disabled={isSubmitting}
+            type="submit"
+          >
+            {isSubmitting ? (
+              <Loader2
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin"
+              />
+            ) : (
+              <UserPlus
+                aria-hidden="true"
+                className="h-4 w-4"
+              />
+            )}
+            {isSubmitting ? "가입 처리 중" : "회원가입"}
+          </button>
+        </form>
+
+        {isSubmitted && (
+          <div className="mt-5 flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+            <CheckCircle2
+              aria-hidden="true"
+              className="h-4 w-4"
+            />
+            회원가입 정보가 정상적으로 확인되었습니다.
+          </div>
+        )}
+
+        <p className="mt-6 text-center text-sm text-slate-500">
+          이미 계정이 있으신가요?{" "}
+          <Link
+            className="font-semibold text-[#2046FF] hover:underline"
+            to={ROUTES.login}
+          >
+            로그인
+          </Link>
+        </p>
+      </div>
+    </section>
+  );
+};

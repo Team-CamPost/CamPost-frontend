@@ -8,6 +8,7 @@ import { LoginPage } from "../../pages/login/LoginPage";
 import { MyPage } from "../../pages/mypage/MyPage";
 import { NotFoundPage } from "../../pages/notFound/NotFoundPage";
 import { NoticeDetailPage } from "../../pages/noticeDetail/NoticeDetailPage";
+import { SignupPage } from "../../pages/signup/SignupPage";
 import { PrivateRoute } from "./PrivateRoute";
 import { PublicRoute } from "./PublicRoute";
 import { RouteErrorPage } from "./RouteErrorPage";
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <LandingPage /> },
           { path: ROUTE_PATHS.login, element: <LoginPage /> },
+          { path: ROUTE_PATHS.signup, element: <SignupPage /> },
           {
             element: <DepartmentLayout />,
             children: [
