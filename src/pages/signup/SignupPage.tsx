@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { ChangeEvent, FocusEvent, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Loader2, UserPlus } from "lucide-react";
 import { ROUTES } from "../../app/router/paths";
+import {
+  checkEmailVerificationCode,
+  checkUsernameAvailability,
+  sendEmailVerificationCode,
+  signup,
+} from "../../shared/api/auth";
 
 type SignupForm = {
   username: string;
@@ -35,6 +41,14 @@ const usernamePattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$/;
 const emailCodePattern = /^\d{6}$/;
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
+const getAuthErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 const validateField = (
   field: keyof SignupForm,
   form: SignupForm,
@@ -47,15 +61,15 @@ const validateField = (
     return required ? requiredMessages[field] : "";
   }
 
-  if (field === "username" && !usernamePattern.test(form.username)) {
-    return "아이디는 영문과 숫자를 모두 포함해 6~20자로 입력해주세요.";
+  if (field === "username" && !usernamePattern.test(form.username.trim())) {
+    return "아이디는 영문과 숫자를 모두 포함한 6~20자로 입력해주세요.";
   }
 
-  if (field === "email" && !emailPattern.test(form.email)) {
+  if (field === "email" && !emailPattern.test(form.email.trim())) {
     return "올바른 이메일 형식으로 입력해주세요.";
   }
 
-  if (field === "emailCode" && !emailCodePattern.test(form.emailCode)) {
+  if (field === "emailCode" && !emailCodePattern.test(form.emailCode.trim())) {
     return "인증번호 6자리를 입력해주세요.";
   }
 
@@ -93,38 +107,47 @@ const validateSubmitErrors = (form: SignupForm) => {
 };
 
 export const SignupPage = () => {
-  const signupTimerRef = useRef<number | null>(null);
   const [form, setForm] = useState<SignupForm>(initialForm);
   const [errors, setErrors] = useState<SignupErrors>({});
   const [usernameCheckMessage, setUsernameCheckMessage] = useState("");
   const [emailAuthMessage, setEmailAuthMessage] = useState("");
   const [emailCodeCheckMessage, setEmailCodeCheckMessage] = useState("");
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [checkedUsername, setCheckedUsername] = useState("");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isSendingEmailCode, setIsSendingEmailCode] = useState(false);
+  const [isCheckingEmailCode, setIsCheckingEmailCode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      if (signupTimerRef.current) {
-        window.clearTimeout(signupTimerRef.current);
-      }
-    };
-  }, []);
+  const normalizedUsername = form.username.trim();
+  const normalizedEmail = form.email.trim().toLowerCase();
+  const isUsernameChecked = checkedUsername === normalizedUsername;
+  const isEmailVerified = verifiedEmail === normalizedEmail;
 
   const handleChange =
     (field: keyof SignupForm) => (event: ChangeEvent<HTMLInputElement>) => {
-      setForm((prevForm) => ({ ...prevForm, [field]: event.target.value }));
+      const nextValue = event.target.value;
+
+      setForm((prevForm) => ({ ...prevForm, [field]: nextValue }));
       setErrors((prevErrors) => ({ ...prevErrors, [field]: undefined }));
+      setSubmitMessage("");
       setIsSubmitted(false);
 
       if (field === "username") {
+        setCheckedUsername("");
         setUsernameCheckMessage("");
       }
 
       if (field === "email") {
+        setVerifiedEmail("");
         setEmailAuthMessage("");
+        setEmailCodeCheckMessage("");
       }
 
       if (field === "emailCode") {
+        setVerifiedEmail("");
         setEmailCodeCheckMessage("");
       }
     };
@@ -137,71 +160,167 @@ export const SignupPage = () => {
       setErrors((prevErrors) => ({ ...prevErrors, [field]: fieldError }));
     };
 
-  const handleUsernameCheck = () => {
+  const handleUsernameCheck = async () => {
     const fieldError = validateField("username", form);
 
     setErrors((prevErrors) => ({ ...prevErrors, username: fieldError }));
+    setUsernameCheckMessage("");
 
-    if (!form.username.trim()) {
+    if (fieldError) {
       return;
     }
 
-    if (!fieldError) {
+    setIsCheckingUsername(true);
+
+    try {
+      const result = await checkUsernameAvailability(normalizedUsername);
+
+      if (!result.available) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          username: "이미 사용 중인 아이디입니다.",
+        }));
+        return;
+      }
+
+      setCheckedUsername(normalizedUsername);
       setUsernameCheckMessage("사용 가능한 아이디입니다.");
+    } catch (error) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        username: getAuthErrorMessage(
+          error,
+          "아이디 중복 확인에 실패했습니다.",
+        ),
+      }));
+    } finally {
+      setIsCheckingUsername(false);
     }
   };
 
-  const handleEmailAuth = () => {
+  const handleEmailAuth = async () => {
     const fieldError = validateField("email", form);
 
     setErrors((prevErrors) => ({ ...prevErrors, email: fieldError }));
+    setEmailAuthMessage("");
+    setEmailCodeCheckMessage("");
+    setVerifiedEmail("");
 
-    if (!form.email.trim()) {
+    if (fieldError) {
       return;
     }
 
-    if (!fieldError) {
+    setIsSendingEmailCode(true);
+
+    try {
+      await sendEmailVerificationCode(normalizedEmail);
       setEmailAuthMessage("인증번호를 전송했습니다.");
+    } catch (error) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        email: getAuthErrorMessage(
+          error,
+          "이메일 인증번호 전송에 실패했습니다.",
+        ),
+      }));
+    } finally {
+      setIsSendingEmailCode(false);
     }
   };
 
-  const handleEmailCodeCheck = () => {
-    const fieldError = validateField("emailCode", form);
+  const handleEmailCodeCheck = async () => {
+    const emailError = validateField("email", form);
+    const codeError = validateField("emailCode", form);
 
-    setErrors((prevErrors) => ({ ...prevErrors, emailCode: fieldError }));
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      email: emailError,
+      emailCode: codeError,
+    }));
+    setEmailCodeCheckMessage("");
 
-    if (!form.emailCode.trim()) {
+    if (emailError || codeError) {
       return;
     }
 
-    if (!fieldError) {
+    setIsCheckingEmailCode(true);
+
+    try {
+      const result = await checkEmailVerificationCode(
+        normalizedEmail,
+        form.emailCode.trim(),
+      );
+
+      if (!result.verified) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          emailCode: "이메일 인증번호가 유효하지 않습니다.",
+        }));
+        return;
+      }
+
+      setVerifiedEmail(normalizedEmail);
       setEmailCodeCheckMessage("인증번호가 확인되었습니다.");
+    } catch (error) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        emailCode: getAuthErrorMessage(
+          error,
+          "이메일 인증번호 확인에 실패했습니다.",
+        ),
+      }));
+    } finally {
+      setIsCheckingEmailCode(false);
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const validationErrors = validateSubmitErrors(form);
+
+    if (!isUsernameChecked) {
+      validationErrors.username = "아이디 중복확인을 완료해주세요.";
+    }
+
+    if (!isEmailVerified) {
+      validationErrors.emailCode = "이메일 인증을 완료해주세요.";
+    }
+
     setErrors(validationErrors);
-    setUsernameCheckMessage("");
-    setEmailAuthMessage("");
-    setEmailCodeCheckMessage("");
+    setSubmitMessage("");
+    setIsSubmitted(false);
 
     if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
-    if (signupTimerRef.current) {
-      window.clearTimeout(signupTimerRef.current);
-    }
-
     setIsSubmitting(true);
-    signupTimerRef.current = window.setTimeout(() => {
-      setIsSubmitting(false);
+
+    try {
+      await signup({
+        username: normalizedUsername,
+        email: normalizedEmail,
+        password: form.password,
+      });
       setIsSubmitted(true);
-    }, 700);
+      setSubmitMessage(
+        "회원가입이 완료되었습니다. 로그인 페이지로 이동해 주세요.",
+      );
+    } catch (error) {
+      setSubmitMessage(
+        getAuthErrorMessage(error, "회원가입 처리에 실패했습니다."),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const isAnyRequestPending =
+    isCheckingUsername ||
+    isSendingEmailCode ||
+    isCheckingEmailCode ||
+    isSubmitting;
 
   return (
     <section className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-4 py-10">
@@ -233,16 +352,17 @@ export const SignupPage = () => {
                 name="username"
                 onBlur={handleBlur("username")}
                 onChange={handleChange("username")}
-                placeholder="campost_user"
+                placeholder="campost123"
                 type="text"
                 value={form.username}
               />
               <button
-                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-3 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white"
+                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-3 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
+                disabled={isAnyRequestPending}
                 onClick={handleUsernameCheck}
                 type="button"
               >
-                중복확인
+                {isCheckingUsername ? "확인 중" : "중복확인"}
               </button>
             </div>
             {errors.username && (
@@ -276,11 +396,12 @@ export const SignupPage = () => {
                 value={form.email}
               />
               <button
-                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-4 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white"
+                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-4 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
+                disabled={isAnyRequestPending}
                 onClick={handleEmailAuth}
                 type="button"
               >
-                인증
+                {isSendingEmailCode ? "전송 중" : "인증"}
               </button>
             </div>
             {errors.email && (
@@ -315,11 +436,12 @@ export const SignupPage = () => {
                 value={form.emailCode}
               />
               <button
-                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-4 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white"
+                className="h-11 shrink-0 rounded-md border border-[#2046FF] px-4 text-sm font-semibold text-[#2046FF] transition hover:bg-[#2046FF] hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
+                disabled={isAnyRequestPending}
                 onClick={handleEmailCodeCheck}
                 type="button"
               >
-                확인
+                {isCheckingEmailCode ? "확인 중" : "확인"}
               </button>
             </div>
             {errors.emailCode && (
@@ -334,16 +456,20 @@ export const SignupPage = () => {
             )}
           </div>
 
-          <label className="block">
+          <label
+            className="block"
+            htmlFor="signup-password"
+          >
             <span className="mb-1.5 block text-sm font-medium text-slate-700">
               비밀번호
             </span>
             <input
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              id="signup-password"
               name="password"
               onBlur={handleBlur("password")}
               onChange={handleChange("password")}
-              placeholder="8자 이상 입력"
+              placeholder="영문+숫자 포함 8자 이상"
               type="password"
               value={form.password}
             />
@@ -354,12 +480,16 @@ export const SignupPage = () => {
             )}
           </label>
 
-          <label className="block">
+          <label
+            className="block"
+            htmlFor="signup-password-confirm"
+          >
             <span className="mb-1.5 block text-sm font-medium text-slate-700">
               비밀번호 확인
             </span>
             <input
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              id="signup-password-confirm"
               name="passwordConfirm"
               onBlur={handleBlur("passwordConfirm")}
               onChange={handleChange("passwordConfirm")}
@@ -376,7 +506,7 @@ export const SignupPage = () => {
 
           <button
             className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#2046FF] text-sm font-semibold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
-            disabled={isSubmitting}
+            disabled={isAnyRequestPending}
             type="submit"
           >
             {isSubmitting ? (
@@ -394,13 +524,21 @@ export const SignupPage = () => {
           </button>
         </form>
 
-        {isSubmitted && (
-          <div className="mt-5 flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
-            <CheckCircle2
-              aria-hidden="true"
-              className="h-4 w-4"
-            />
-            회원가입 정보가 정상적으로 확인되었습니다.
+        {submitMessage && (
+          <div
+            className={`mt-5 flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
+              isSubmitted
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-red-50 text-red-500"
+            }`}
+          >
+            {isSubmitted && (
+              <CheckCircle2
+                aria-hidden="true"
+                className="h-4 w-4"
+              />
+            )}
+            {submitMessage}
           </div>
         )}
 
