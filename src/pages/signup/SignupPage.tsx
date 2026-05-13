@@ -183,7 +183,7 @@ export const SignupPage = () => {
         return;
       }
 
-      setCheckedUsername(result.username);
+      setCheckedUsername(normalizedUsername);
       setUsernameCheckMessage("사용 가능한 아이디입니다.");
     } catch (error) {
       setErrors((prevErrors) => ({
@@ -259,7 +259,7 @@ export const SignupPage = () => {
         return;
       }
 
-      setVerifiedEmail(result.email);
+      setVerifiedEmail(normalizedEmail);
       setEmailCodeCheckMessage("인증번호가 확인되었습니다.");
     } catch (error) {
       setErrors((prevErrors) => ({

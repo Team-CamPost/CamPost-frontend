@@ -47,6 +47,10 @@ export class AuthApiError extends Error {
 }
 
 const toAuthApiError = (error: unknown) => {
+  if (error instanceof AuthApiError) {
+    return error;
+  }
+
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ErrorResponse>;
     const responseData = axiosError.response?.data;
