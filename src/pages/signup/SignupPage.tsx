@@ -346,13 +346,13 @@ export const SignupPage = () => {
           noValidate
           onSubmit={handleSubmit}
         >
-          <label
-            className="block"
-            htmlFor="signup-name"
-          >
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+              htmlFor="signup-name"
+            >
               이름
-            </span>
+            </label>
             <input
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
               id="signup-name"
@@ -368,7 +368,7 @@ export const SignupPage = () => {
                 {errors.name}
               </span>
             )}
-          </label>
+          </div>
 
           <div>
             <label
