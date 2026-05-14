@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
 import { LogIn, UserPlus } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
+import { login as loginApi, AuthApiError } from "../../shared/api/auth";
 import { useAuth } from "../../shared/hooks/useAuth";
 
 export const LoginPage = () => {
   const { login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const loginTimerRef = useRef<number | null>(null);
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,15 +18,7 @@ export const LoginPage = () => {
   const params = new URLSearchParams(location.search);
   const redirectTo = params.get("redirectTo") || ROUTES.home;
 
-  useEffect(() => {
-    return () => {
-      if (loginTimerRef.current) {
-        window.clearTimeout(loginTimerRef.current);
-      }
-    };
-  }, []);
-
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!loginId.trim() || !password.trim()) {
@@ -34,16 +26,22 @@ export const LoginPage = () => {
       return;
     }
 
-    if (loginTimerRef.current) {
-      window.clearTimeout(loginTimerRef.current);
-    }
-
     setIsSubmitting(true);
-    login();
-    loginTimerRef.current = window.setTimeout(() => {
-      setIsSubmitting(false);
+    setError("");
+
+    try {
+      const result = await loginApi({ username: loginId.trim(), password });
+      login(result.accessToken, result.name);
       navigate(redirectTo, { replace: true });
-    }, 400);
+    } catch (err) {
+      if (err instanceof AuthApiError) {
+        setError(err.message);
+      } else {
+        setError("로그인 처리에 실패했습니다.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -29,7 +29,14 @@ interface EmailVerificationCheckResponse {
   verifiedAt: string;
 }
 
+interface LoginResponse {
+  accessToken: string;
+  tokenType: string;
+  name: string;
+}
+
 interface SignupResponse {
+  name: string;
   username: string;
   email: string;
 }
@@ -77,6 +84,25 @@ const unwrapResponse = <T>(response: ApiResponse<T>) => {
   return response.result;
 };
 
+export const login = async ({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}) => {
+  try {
+    const response = await authApiClient.post<ApiResponse<LoginResponse>>(
+      "/api/v1/auth/login",
+      { username, password },
+    );
+
+    return unwrapResponse(response.data);
+  } catch (error) {
+    throw toAuthApiError(error);
+  }
+};
+
 export const checkUsernameAvailability = async (username: string) => {
   try {
     const response = await authApiClient.get<
@@ -122,10 +148,12 @@ export const checkEmailVerificationCode = async (
 };
 
 export const signup = async ({
+  name,
   username,
   email,
   password,
 }: {
+  name: string;
   username: string;
   email: string;
   password: string;
@@ -134,6 +162,7 @@ export const signup = async ({
     const response = await authApiClient.post<ApiResponse<SignupResponse>>(
       "/api/v1/auth/signup",
       {
+        name,
         username,
         email,
         password,

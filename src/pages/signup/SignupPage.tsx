@@ -11,6 +11,7 @@ import {
 } from "../../shared/api/auth";
 
 type SignupForm = {
+  name: string;
   username: string;
   email: string;
   emailCode: string;
@@ -21,6 +22,7 @@ type SignupForm = {
 type SignupErrors = Partial<Record<keyof SignupForm, string>>;
 
 const initialForm: SignupForm = {
+  name: "",
   username: "",
   email: "",
   emailCode: "",
@@ -29,6 +31,7 @@ const initialForm: SignupForm = {
 };
 
 const requiredMessages: Record<keyof SignupForm, string> = {
+  name: "이름을 입력해주세요.",
   username: "아이디를 입력해주세요.",
   email: "이메일을 입력해주세요.",
   emailCode: "이메일 인증번호를 입력해주세요.",
@@ -59,6 +62,10 @@ const validateField = (
 
   if (!value.trim()) {
     return required ? requiredMessages[field] : "";
+  }
+
+  if (field === "name" && form.name.trim().length > 50) {
+    return "이름은 50자 이하로 입력해주세요.";
   }
 
   if (field === "username" && !usernamePattern.test(form.username.trim())) {
@@ -299,6 +306,7 @@ export const SignupPage = () => {
 
     try {
       await signup({
+        name: form.name.trim(),
         username: normalizedUsername,
         email: normalizedEmail,
         password: form.password,
@@ -338,6 +346,30 @@ export const SignupPage = () => {
           noValidate
           onSubmit={handleSubmit}
         >
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+              htmlFor="signup-name"
+            >
+              이름
+            </label>
+            <input
+              className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
+              id="signup-name"
+              name="name"
+              onBlur={handleBlur("name")}
+              onChange={handleChange("name")}
+              placeholder="홍길동"
+              type="text"
+              value={form.name}
+            />
+            {errors.name && (
+              <span className="mt-1.5 block text-xs font-medium text-red-500">
+                {errors.name}
+              </span>
+            )}
+          </div>
+
           <div>
             <label
               className="mb-1.5 block text-sm font-medium text-slate-700"
