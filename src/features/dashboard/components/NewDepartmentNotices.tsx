@@ -1,13 +1,16 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotices } from "../../../shared/api/notice";
-import { getBackendDeptCodeByDepartmentId } from "../../../shared/constants/departments";
+import {
+  DEFAULT_DEPARTMENT_ID,
+  getBackendDeptCodeByDepartmentId,
+} from "../../../shared/constants/departments";
 import { formatDate, getDateSortValue } from "../../../shared/utils/date";
 import { NoticeSection } from "./NoticeSection";
 import type { NoticeCardData } from "../types/notice";
 
 export const NewDepartmentNotices = () => {
-  const { departmentId = "sw" } = useParams();
+  const { departmentId = DEFAULT_DEPARTMENT_ID } = useParams();
   const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
 
   const {

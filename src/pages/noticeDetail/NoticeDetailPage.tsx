@@ -6,7 +6,10 @@ import { NoticeDetailContent } from "../../features/noticeDetail/components/Noti
 import { NoticeDetailSidebar } from "../../features/noticeDetail/components/NoticeDetailSidebar";
 import { NoticeDetailRecommendations } from "../../features/noticeDetail/components/NoticeDetailRecommendations";
 import { fetchNoticeDetail, fetchNotices } from "../../shared/api/notice";
-import { getBackendDeptCodeByDepartmentId } from "../../shared/constants/departments";
+import {
+  DEFAULT_DEPARTMENT_ID,
+  getBackendDeptCodeByDepartmentId,
+} from "../../shared/constants/departments";
 import { formatDate, getDDay } from "../../shared/utils/date";
 import type { NoticeCardData } from "../../features/dashboard/types/notice";
 import type {
@@ -15,7 +18,7 @@ import type {
 } from "../../features/noticeDetail/types";
 
 export const NoticeDetailPage = () => {
-  const { departmentId = "sw", noticeId = "" } = useParams();
+  const { departmentId = DEFAULT_DEPARTMENT_ID, noticeId = "" } = useParams();
   const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
   const parsedNoticeId = Number.parseInt(noticeId, 10);
   const hasValidNoticeId =
