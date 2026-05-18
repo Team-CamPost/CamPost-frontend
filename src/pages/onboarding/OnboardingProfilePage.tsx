@@ -7,6 +7,7 @@ import {
   DEPARTMENTS,
   DEFAULT_DEPARTMENT_ID,
 } from "../../shared/constants/departments";
+import { saveOnboardingProfileDraft } from "../../shared/hooks/useOnboardingProfileDraft";
 import { setPreferredDepartmentId } from "../../shared/hooks/usePreferredDepartment";
 
 const gradeOptions = [
@@ -48,27 +49,29 @@ export const OnboardingProfilePage = () => {
     DEPARTMENTS.find((department) => department.id === DEFAULT_DEPARTMENT_ID);
 
   const handleNext = () => {
-    if (!canGoNext) {
-      if (currentStep === 2) {
-        setNicknameTouched(true);
-      }
-      return;
-    }
-
-    if (currentStep < steps.length - 1) {
-      setCurrentStep((step) => step + 1);
-    }
+    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNicknameTouched(true);
 
-    if (!departmentId || grade === null || !trimmedNickname) {
+    if (
+      !departmentId ||
+      grade === null ||
+      !trimmedNickname ||
+      !selectedDepartment
+    ) {
       return;
     }
 
     setPreferredDepartmentId(departmentId);
+    saveOnboardingProfileDraft({
+      departmentId,
+      departmentCode: selectedDepartment.backendDeptCode,
+      grade,
+      nickname: trimmedNickname,
+    });
     navigate(ROUTES.departmentDashboard(departmentId), { replace: true });
   };
 
