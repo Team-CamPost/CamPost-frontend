@@ -6,6 +6,7 @@ export const ROUTES = {
   signup: "/signup",
   mypage: "/mypage",
   bookmarks: "/bookmarks",
+  onboardingProfile: "/onboarding/profile",
   departmentDashboard: (departmentId: string) => `/departments/${departmentId}`,
   noticeDetail: (departmentId: string, noticeId: string) =>
     `/departments/${departmentId}/notices/${noticeId}`,
@@ -17,6 +18,7 @@ export const ROUTE_PATHS = {
   signup: "/signup",
   mypage: "/mypage",
   bookmarks: "/bookmarks",
+  onboardingProfile: "/onboarding/profile",
   departmentDashboard: "/departments/:departmentId",
   noticeDetail: "/departments/:departmentId/notices/:noticeId",
   notFound: "*",

@@ -11,6 +11,7 @@ import { LoginPage } from "../../pages/login/LoginPage";
 import { MyPage } from "../../pages/mypage/MyPage";
 import { NotFoundPage } from "../../pages/notFound/NotFoundPage";
 import { NoticeDetailPage } from "../../pages/noticeDetail/NoticeDetailPage";
+import { OnboardingProfilePage } from "../../pages/onboarding/OnboardingProfilePage";
 import { SignupPage } from "../../pages/signup/SignupPage";
 import { PrivateRoute } from "./PrivateRoute";
 import { PublicRoute } from "./PublicRoute";
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
       {
         element: <PrivateRoute />,
         children: [
+          {
+            path: ROUTE_PATHS.onboardingProfile,
+            element: <OnboardingProfilePage />,
+          },
           { path: ROUTE_PATHS.mypage, element: <MyPage /> },
           { path: ROUTE_PATHS.bookmarks, element: <BookmarksPage /> },
         ],
