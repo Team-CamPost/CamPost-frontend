@@ -7,7 +7,10 @@ import { NewDepartmentNotices } from "../../features/dashboard/components/NewDep
 import { LatestNoticeBoard } from "../../features/dashboard/components/LatestNoticeBoard";
 import { DashboardSectionStack } from "../../features/dashboard/components/DashboardSectionStack";
 import { fetchNotices } from "../../shared/api/notice";
-import { getBackendDeptCodeByDepartmentId } from "../../shared/constants/departments";
+import {
+  DEFAULT_DEPARTMENT_ID,
+  getBackendDeptCodeByDepartmentId,
+} from "../../shared/constants/departments";
 import { formatDate, getDDay } from "../../shared/utils/date";
 import type { NoticeCardData } from "../../features/dashboard/types/notice";
 
@@ -19,7 +22,7 @@ interface LatestNoticeItem extends NoticeCardData {
 }
 
 export const DepartmentDashboardPage = () => {
-  const { departmentId = "sw" } = useParams();
+  const { departmentId = DEFAULT_DEPARTMENT_ID } = useParams();
   const location = useLocation();
   const backendDeptCode = getBackendDeptCodeByDepartmentId(departmentId);
 

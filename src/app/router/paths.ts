@@ -1,3 +1,5 @@
+import { DEFAULT_DEPARTMENT_ID } from "../../shared/constants/departments";
+
 export const ROUTES = {
   home: "/",
   login: "/login",
@@ -19,3 +21,8 @@ export const ROUTE_PATHS = {
   noticeDetail: "/departments/:departmentId/notices/:noticeId",
   notFound: "*",
 } as const;
+
+// Temporary entry point until the college-wide notices page is ready.
+export const DEFAULT_PUBLIC_ENTRY_PATH = ROUTES.departmentDashboard(
+  DEFAULT_DEPARTMENT_ID,
+);

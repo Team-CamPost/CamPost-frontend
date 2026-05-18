@@ -1,9 +1,12 @@
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import {
+  Navigate,
+  RouterProvider,
+  createBrowserRouter,
+} from "react-router-dom";
 import { RootLayout } from "../layouts/RootLayout";
 import { DepartmentLayout } from "../layouts/DepartmentLayout";
 import { BookmarksPage } from "../../pages/bookmarks/BookmarksPage";
 import { DepartmentDashboardPage } from "../../pages/dashboard/DepartmentDashboardPage";
-import { LandingPage } from "../../pages/landing/LandingPage";
 import { LoginPage } from "../../pages/login/LoginPage";
 import { MyPage } from "../../pages/mypage/MyPage";
 import { NotFoundPage } from "../../pages/notFound/NotFoundPage";
@@ -12,7 +15,7 @@ import { SignupPage } from "../../pages/signup/SignupPage";
 import { PrivateRoute } from "./PrivateRoute";
 import { PublicRoute } from "./PublicRoute";
 import { RouteErrorPage } from "./RouteErrorPage";
-import { ROUTE_PATHS } from "./paths";
+import { DEFAULT_PUBLIC_ENTRY_PATH, ROUTE_PATHS } from "./paths";
 
 const router = createBrowserRouter([
   {
@@ -23,7 +26,15 @@ const router = createBrowserRouter([
       {
         element: <PublicRoute />,
         children: [
-          { index: true, element: <LandingPage /> },
+          {
+            index: true,
+            element: (
+              <Navigate
+                to={DEFAULT_PUBLIC_ENTRY_PATH}
+                replace
+              />
+            ),
+          },
           { path: ROUTE_PATHS.login, element: <LoginPage /> },
           { path: ROUTE_PATHS.signup, element: <SignupPage /> },
           {
