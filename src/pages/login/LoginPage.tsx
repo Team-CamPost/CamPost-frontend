@@ -5,6 +5,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import { login as loginApi, AuthApiError } from "../../shared/api/auth";
 import { useAuth } from "../../shared/hooks/useAuth";
+import {
+  isOnboardingProfileCompleted,
+  markOnboardingProfileCompleted,
+} from "../../shared/hooks/useOnboardingProfileDraft";
 
 export const LoginPage = () => {
   const { login } = useAuth();
@@ -30,9 +34,18 @@ export const LoginPage = () => {
     setError("");
 
     try {
-      const result = await loginApi({ username: loginId.trim(), password });
-      login(result.accessToken, result.name);
-      navigate(redirectTo, { replace: true });
+      const normalizedUsername = loginId.trim();
+      const result = await loginApi({ username: normalizedUsername, password });
+      login(result.accessToken, result.name, normalizedUsername);
+      const profileCompleted =
+        result.profileCompleted ??
+        isOnboardingProfileCompleted(normalizedUsername);
+      if (profileCompleted) {
+        markOnboardingProfileCompleted(normalizedUsername);
+      }
+      navigate(profileCompleted ? redirectTo : ROUTES.onboardingProfile, {
+        replace: true,
+      });
     } catch (err) {
       if (err instanceof AuthApiError) {
         setError(err.message);

@@ -33,6 +33,7 @@ interface LoginResponse {
   accessToken: string;
   tokenType: string;
   name: string;
+  profileCompleted?: boolean;
 }
 
 interface SignupResponse {
