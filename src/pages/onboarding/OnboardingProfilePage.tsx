@@ -3,11 +3,16 @@ import type { FormEvent } from "react";
 import { Check, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
+import { saveOnboardingProfile, UserApiError } from "../../shared/api/user";
 import {
   DEPARTMENTS,
   DEFAULT_DEPARTMENT_ID,
 } from "../../shared/constants/departments";
-import { saveOnboardingProfileDraft } from "../../shared/hooks/useOnboardingProfileDraft";
+import { useAuth } from "../../shared/hooks/useAuth";
+import {
+  markOnboardingProfileCompleted,
+  saveOnboardingProfileDraft,
+} from "../../shared/hooks/useOnboardingProfileDraft";
 import { setPreferredDepartmentId } from "../../shared/hooks/usePreferredDepartment";
 
 const gradeOptions = [
@@ -22,11 +27,14 @@ const steps = ["학과", "학년", "닉네임"] as const;
 
 export const OnboardingProfilePage = () => {
   const navigate = useNavigate();
+  const { username } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [departmentId, setDepartmentId] = useState<string>("");
   const [grade, setGrade] = useState<number | null>(null);
   const [nickname, setNickname] = useState("");
   const [nicknameTouched, setNicknameTouched] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const trimmedNickname = nickname.trim();
   const nicknameError =
@@ -52,9 +60,10 @@ export const OnboardingProfilePage = () => {
     setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNicknameTouched(true);
+    setSubmitError("");
 
     if (
       !departmentId ||
@@ -65,14 +74,33 @@ export const OnboardingProfilePage = () => {
       return;
     }
 
-    setPreferredDepartmentId(departmentId);
-    saveOnboardingProfileDraft({
-      departmentId,
-      departmentCode: selectedDepartment.backendDeptCode,
-      grade,
-      nickname: trimmedNickname,
-    });
-    navigate(ROUTES.departmentDashboard(departmentId), { replace: true });
+    setIsSubmitting(true);
+
+    try {
+      await saveOnboardingProfile({
+        department: selectedDepartment.backendDeptCode,
+        grade,
+        nickname: trimmedNickname,
+      });
+
+      setPreferredDepartmentId(departmentId);
+      saveOnboardingProfileDraft({
+        departmentId,
+        departmentCode: selectedDepartment.backendDeptCode,
+        grade,
+        nickname: trimmedNickname,
+      });
+      markOnboardingProfileCompleted(username);
+      navigate(ROUTES.departmentDashboard(departmentId), { replace: true });
+    } catch (error) {
+      if (error instanceof UserApiError) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError("프로필 저장에 실패했습니다.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -152,6 +180,7 @@ export const OnboardingProfilePage = () => {
                     key={department.id}
                     onClick={() => {
                       setDepartmentId(department.id);
+                      setSubmitError("");
                     }}
                     type="button"
                   >
@@ -178,6 +207,7 @@ export const OnboardingProfilePage = () => {
                     key={option.value}
                     onClick={() => {
                       setGrade(option.value);
+                      setSubmitError("");
                     }}
                     type="button"
                   >
@@ -205,6 +235,7 @@ export const OnboardingProfilePage = () => {
                   }}
                   onChange={(event) => {
                     setNickname(event.target.value);
+                    setSubmitError("");
                   }}
                   placeholder="닉네임 입력"
                   type="text"
@@ -243,9 +274,15 @@ export const OnboardingProfilePage = () => {
           )}
         </div>
 
+        {submitError && (
+          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500">
+            {submitError}
+          </p>
+        )}
+
         <button
           className="mt-8 flex h-14 w-full items-center justify-center rounded-2xl bg-[#2046FF] text-base font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
-          disabled={!canGoNext}
+          disabled={!canGoNext || isSubmitting}
           onClick={currentStep < steps.length - 1 ? handleNext : undefined}
           type={currentStep < steps.length - 1 ? "button" : "submit"}
         >

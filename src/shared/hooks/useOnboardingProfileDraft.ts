@@ -1,4 +1,6 @@
 const ONBOARDING_PROFILE_DRAFT_KEY = "campost.onboarding-profile-draft";
+const ONBOARDING_PROFILE_COMPLETED_PREFIX =
+  "campost.onboarding-profile-completed";
 
 export type OnboardingProfileDraft = {
   departmentId: string;
@@ -28,4 +30,23 @@ export const getOnboardingProfileDraft = () => {
 
 export const clearOnboardingProfileDraft = () => {
   localStorage.removeItem(ONBOARDING_PROFILE_DRAFT_KEY);
+};
+
+const getCompletedKey = (username: string) =>
+  `${ONBOARDING_PROFILE_COMPLETED_PREFIX}.${username}`;
+
+export const isOnboardingProfileCompleted = (username: string) => {
+  if (!username.trim()) {
+    return false;
+  }
+
+  return localStorage.getItem(getCompletedKey(username.trim())) === "true";
+};
+
+export const markOnboardingProfileCompleted = (username: string) => {
+  if (!username.trim()) {
+    return;
+  }
+
+  localStorage.setItem(getCompletedKey(username.trim()), "true");
 };

@@ -1,17 +1,12 @@
-import axios, { AxiosError } from "axios";
-import { API_BASE_URL } from "../config/env";
+import {
+  ApiClientError,
+  apiClient,
+  toApiClientError,
+  unwrapResponse,
+} from "./client";
 import type { ApiResponse } from "../types/api";
 
-const authApiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-});
-
-interface ErrorResponse {
-  isSuccess: false;
-  code: string;
-  message: string;
-}
+export { ApiClientError as AuthApiError };
 
 interface UsernameAvailabilityResponse {
   username: string;
@@ -33,6 +28,7 @@ interface LoginResponse {
   accessToken: string;
   tokenType: string;
   name: string;
+  profileCompleted?: boolean;
 }
 
 interface SignupResponse {
@@ -40,49 +36,6 @@ interface SignupResponse {
   username: string;
   email: string;
 }
-
-export class AuthApiError extends Error {
-  public readonly code?: string;
-  public readonly status?: number;
-
-  constructor(message: string, code?: string, status?: number) {
-    super(message);
-    this.name = "AuthApiError";
-    this.code = code;
-    this.status = status;
-  }
-}
-
-const toAuthApiError = (error: unknown) => {
-  if (error instanceof AuthApiError) {
-    return error;
-  }
-
-  if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<ErrorResponse>;
-    const responseData = axiosError.response?.data;
-
-    return new AuthApiError(
-      responseData?.message || "요청을 처리하지 못했습니다.",
-      responseData?.code,
-      axiosError.response?.status,
-    );
-  }
-
-  if (error instanceof Error) {
-    return new AuthApiError(error.message);
-  }
-
-  return new AuthApiError("요청을 처리하지 못했습니다.");
-};
-
-const unwrapResponse = <T>(response: ApiResponse<T>) => {
-  if (!response.isSuccess) {
-    throw new AuthApiError(response.message, response.code);
-  }
-
-  return response.result;
-};
 
 export const login = async ({
   username,
@@ -92,20 +45,20 @@ export const login = async ({
   password: string;
 }) => {
   try {
-    const response = await authApiClient.post<ApiResponse<LoginResponse>>(
+    const response = await apiClient.post<ApiResponse<LoginResponse>>(
       "/api/v1/auth/login",
       { username, password },
     );
 
     return unwrapResponse(response.data);
   } catch (error) {
-    throw toAuthApiError(error);
+    throw toApiClientError(error);
   }
 };
 
 export const checkUsernameAvailability = async (username: string) => {
   try {
-    const response = await authApiClient.get<
+    const response = await apiClient.get<
       ApiResponse<UsernameAvailabilityResponse>
     >("/api/v1/auth/check-username", {
       params: { username },
@@ -113,19 +66,19 @@ export const checkUsernameAvailability = async (username: string) => {
 
     return unwrapResponse(response.data);
   } catch (error) {
-    throw toAuthApiError(error);
+    throw toApiClientError(error);
   }
 };
 
 export const sendEmailVerificationCode = async (email: string) => {
   try {
-    const response = await authApiClient.post<
+    const response = await apiClient.post<
       ApiResponse<EmailVerificationCodeResponse>
     >("/api/v1/auth/email/verification-code", { email });
 
     return unwrapResponse(response.data);
   } catch (error) {
-    throw toAuthApiError(error);
+    throw toApiClientError(error);
   }
 };
 
@@ -134,7 +87,7 @@ export const checkEmailVerificationCode = async (
   code: string,
 ) => {
   try {
-    const response = await authApiClient.post<
+    const response = await apiClient.post<
       ApiResponse<EmailVerificationCheckResponse>
     >("/api/v1/auth/email/verification-code/check", {
       email,
@@ -143,7 +96,7 @@ export const checkEmailVerificationCode = async (
 
     return unwrapResponse(response.data);
   } catch (error) {
-    throw toAuthApiError(error);
+    throw toApiClientError(error);
   }
 };
 
@@ -159,7 +112,7 @@ export const signup = async ({
   password: string;
 }) => {
   try {
-    const response = await authApiClient.post<ApiResponse<SignupResponse>>(
+    const response = await apiClient.post<ApiResponse<SignupResponse>>(
       "/api/v1/auth/signup",
       {
         name,
@@ -171,6 +124,6 @@ export const signup = async ({
 
     return unwrapResponse(response.data);
   } catch (error) {
-    throw toAuthApiError(error);
+    throw toApiClientError(error);
   }
 };
