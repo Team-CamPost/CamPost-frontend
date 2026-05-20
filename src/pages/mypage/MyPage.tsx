@@ -12,28 +12,51 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  X,
   Trash2,
   UserRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import {
   getMyProfile,
+  updateMyProfile,
   UserApiError,
   type UserProfileResponse,
 } from "../../shared/api/user";
 import { DEPARTMENTS } from "../../shared/constants/departments";
 import { useAuth } from "../../shared/hooks/useAuth";
-import { getOnboardingProfileDraft } from "../../shared/hooks/useOnboardingProfileDraft";
+import {
+  getOnboardingProfileDraft,
+  saveOnboardingProfileDraft,
+} from "../../shared/hooks/useOnboardingProfileDraft";
+import { setPreferredDepartmentId } from "../../shared/hooks/usePreferredDepartment";
 
 type MenuItem = {
   title: string;
   description?: string;
   icon: ReactNode;
   to?: string;
+  onClick?: () => void;
   danger?: boolean;
   badge?: string;
+};
+
+type ProfileEditForm = {
+  department: string;
+  grade: number | "";
+  nickname: string;
+};
+
+type CompleteProfileEditForm = Omit<ProfileEditForm, "grade"> & {
+  grade: number;
 };
 
 const departmentNameByCode = new Map(
@@ -44,6 +67,14 @@ const departmentNameByCode = new Map(
 );
 
 const PAGE_MIN_HEIGHT_CLASS = "min-h-[calc(100vh-4rem)]";
+const MAX_NICKNAME_LENGTH = 50;
+const gradeOptions = [
+  { value: 1, label: "1학년" },
+  { value: 2, label: "2학년" },
+  { value: 3, label: "3학년" },
+  { value: 4, label: "4학년" },
+  { value: 5, label: "5학년 이상" },
+] as const;
 
 const getDepartmentName = (department?: string | null) => {
   if (!department?.trim()) {
@@ -79,6 +110,17 @@ const formatAffiliation = ({
   return `${departmentName} · ${gradeLabel}`;
 };
 
+const getDepartmentIdByCode = (departmentCode?: string | null) =>
+  DEPARTMENTS.find(
+    (department) => department.backendDeptCode === departmentCode,
+  )?.id ?? "";
+
+const isProfileEditFormComplete = (
+  form: ProfileEditForm,
+  trimmedNickname: string,
+): form is CompleteProfileEditForm =>
+  Boolean(form.department) && form.grade !== "" && Boolean(trimmedNickname);
+
 export const MyPage = () => {
   const navigate = useNavigate();
   const { logout, userName, username } = useAuth();
@@ -86,6 +128,15 @@ export const MyPage = () => {
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [profileErrorMessage, setProfileErrorMessage] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState<ProfileEditForm>({
+    department: "",
+    grade: "",
+    nickname: "",
+  });
+  const [editErrorMessage, setEditErrorMessage] = useState("");
+  const [editSuccessMessage, setEditSuccessMessage] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -147,6 +198,88 @@ export const MyPage = () => {
     hasDepartment,
     hasGrade,
   });
+  const selectedEditDepartment = DEPARTMENTS.find(
+    (department) => department.backendDeptCode === editForm.department,
+  );
+  const trimmedEditNickname = editForm.nickname.trim();
+  const canSubmitProfileEdit =
+    isProfileEditFormComplete(editForm, trimmedEditNickname) &&
+    !isSavingProfile;
+
+  const openProfileEditForm = () => {
+    setEditForm({
+      department: departmentCode || "",
+      grade: grade || "",
+      nickname,
+    });
+    setEditErrorMessage("");
+    setEditSuccessMessage("");
+    setIsEditingProfile(true);
+  };
+
+  const closeProfileEditForm = () => {
+    setIsEditingProfile(false);
+    setEditErrorMessage("");
+  };
+
+  const handleProfileEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEditErrorMessage("");
+    setEditSuccessMessage("");
+
+    if (!isProfileEditFormComplete(editForm, trimmedEditNickname)) {
+      setEditErrorMessage("닉네임, 학과, 학년을 모두 입력해주세요.");
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const updatedProfile = await updateMyProfile({
+        department: editForm.department,
+        grade: editForm.grade,
+        nickname: trimmedEditNickname,
+      });
+
+      setProfile(updatedProfile);
+
+      const updatedDepartmentId = getDepartmentIdByCode(
+        updatedProfile.department,
+      );
+
+      if (
+        updatedDepartmentId &&
+        updatedProfile.department &&
+        updatedProfile.grade != null
+      ) {
+        setPreferredDepartmentId(updatedDepartmentId);
+        saveOnboardingProfileDraft({
+          departmentId: updatedDepartmentId,
+          departmentCode: updatedProfile.department,
+          grade: updatedProfile.grade,
+          nickname: updatedProfile.nickname,
+        });
+      }
+
+      setEditSuccessMessage("프로필 정보가 저장되었습니다.");
+      setIsEditingProfile(false);
+    } catch (error) {
+      const apiError =
+        error instanceof UserApiError
+          ? error
+          : new UserApiError("프로필 정보를 저장하지 못했습니다.");
+
+      if (apiError.status === 401) {
+        logout();
+        navigate(ROUTES.login, { replace: true });
+        return;
+      }
+
+      setEditErrorMessage(apiError.message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -224,7 +357,172 @@ export const MyPage = () => {
               {profileErrorMessage}
             </div>
           )}
+
+          {editSuccessMessage && (
+            <div className="mt-5 rounded-xl bg-[#2046FF]/10 px-4 py-3 text-sm font-bold text-[#2046FF]">
+              {editSuccessMessage}
+            </div>
+          )}
         </section>
+
+        {isEditingProfile && (
+          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">
+                  내 정보 수정
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  마이페이지와 공지 개인화에 사용할 정보를 수정합니다.
+                </p>
+              </div>
+
+              <button
+                aria-label="내 정보 수정 닫기"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+                onClick={closeProfileEditForm}
+                type="button"
+              >
+                <X
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                />
+              </button>
+            </div>
+
+            <form
+              className="mt-5 space-y-5"
+              noValidate
+              onSubmit={handleProfileEditSubmit}
+            >
+              <div>
+                <label
+                  className="text-sm font-bold text-slate-700"
+                  htmlFor="profile-nickname"
+                >
+                  닉네임
+                </label>
+                <input
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 transition outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-4 focus:ring-[#2046FF]/10"
+                  id="profile-nickname"
+                  maxLength={MAX_NICKNAME_LENGTH}
+                  onChange={(event) => {
+                    setEditForm((form) => ({
+                      ...form,
+                      nickname: event.target.value,
+                    }));
+                    setEditErrorMessage("");
+                  }}
+                  placeholder="닉네임을 입력해주세요"
+                  type="text"
+                  value={editForm.nickname}
+                />
+                <div className="mt-2 flex justify-end text-xs font-semibold text-slate-400">
+                  {editForm.nickname.length}/{MAX_NICKNAME_LENGTH}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-slate-700">학과</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {DEPARTMENTS.map((department) => {
+                    const isSelected =
+                      department.backendDeptCode === editForm.department;
+
+                    return (
+                      <button
+                        className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-sm font-bold transition ${
+                          isSelected
+                            ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                        key={department.id}
+                        onClick={() => {
+                          setEditForm((form) => ({
+                            ...form,
+                            department: department.backendDeptCode,
+                          }));
+                          setEditErrorMessage("");
+                        }}
+                        type="button"
+                      >
+                        {department.name}
+                        {isSelected && (
+                          <span className="h-2 w-2 rounded-full bg-[#2046FF]" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-slate-700">학년</p>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {gradeOptions.map((option) => {
+                    const isSelected = option.value === editForm.grade;
+
+                    return (
+                      <button
+                        className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
+                          isSelected
+                            ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                        key={option.value}
+                        onClick={() => {
+                          setEditForm((form) => ({
+                            ...form,
+                            grade: option.value,
+                          }));
+                          setEditErrorMessage("");
+                        }}
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                선택 정보:{" "}
+                <span className="font-bold text-slate-800">
+                  {selectedEditDepartment?.name || "학과 미선택"} ·{" "}
+                  {editForm.grade ? formatGrade(editForm.grade) : "학년 미선택"}
+                </span>
+              </div>
+
+              {editErrorMessage && (
+                <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                  <AlertCircle
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                  />
+                  {editErrorMessage}
+                </div>
+              )}
+
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                  onClick={closeProfileEditForm}
+                  type="button"
+                >
+                  취소
+                </button>
+                <button
+                  className="h-11 rounded-xl bg-[#2046FF] px-5 text-sm font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  disabled={!canSubmitProfileEdit}
+                  type="submit"
+                >
+                  {isSavingProfile ? "저장 중" : "저장"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
 
         <div className="mt-5 space-y-4">
           <MenuSection
@@ -233,7 +531,7 @@ export const MyPage = () => {
                 title: "내 정보 수정",
                 description: "닉네임, 학과, 학년",
                 icon: <Pencil className="h-5 w-5" />,
-                badge: "준비 중",
+                onClick: openProfileEditForm,
               },
               {
                 title: "비밀번호 변경",
@@ -389,7 +687,7 @@ const MenuRow = ({ item }: { item: MenuItem }) => {
         </span>
       )}
 
-      {item.to && (
+      {(item.to || item.onClick) && (
         <ChevronRight
           aria-hidden="true"
           className="h-4 w-4 shrink-0 text-slate-300"
@@ -399,16 +697,28 @@ const MenuRow = ({ item }: { item: MenuItem }) => {
   );
 
   const rowClassName = "flex w-full items-center gap-3 py-4 text-left sm:px-2";
-  const linkClassName = `${rowClassName} transition hover:bg-slate-50`;
+  const actionClassName = `${rowClassName} transition hover:bg-slate-50`;
 
   if (item.to) {
     return (
       <Link
-        className={linkClassName}
+        className={actionClassName}
         to={item.to}
       >
         {content}
       </Link>
+    );
+  }
+
+  if (item.onClick) {
+    return (
+      <button
+        className={actionClassName}
+        onClick={item.onClick}
+        type="button"
+      >
+        {content}
+      </button>
     );
   }
 
