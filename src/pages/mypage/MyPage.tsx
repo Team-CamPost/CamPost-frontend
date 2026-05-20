@@ -246,6 +246,7 @@ export const MyPage = () => {
 
   const openPasswordChangeForm = () => {
     setIsEditingProfile(false);
+    setEditSuccessMessage("");
     setPasswordForm(initialPasswordChangeForm);
     setPasswordErrorMessage("");
     setPasswordSuccessMessage("");
@@ -380,6 +381,11 @@ export const MyPage = () => {
       if (apiError.status === 401 && apiError.code !== "AUTH401_CREDENTIALS") {
         logout();
         navigate(ROUTES.login, { replace: true });
+        return;
+      }
+
+      if (apiError.code === "AUTH401_CREDENTIALS") {
+        setPasswordErrorMessage("비밀번호가 올바르지 않습니다.");
         return;
       }
 
