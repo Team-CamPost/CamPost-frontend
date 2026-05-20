@@ -14,7 +14,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import { DEPARTMENTS } from "../../shared/constants/departments";
@@ -37,6 +37,8 @@ const departmentNameByCode = new Map(
   ]),
 );
 
+const PAGE_MIN_HEIGHT_CLASS = "min-h-[calc(100vh-4rem)]";
+
 const formatGrade = (grade?: number) => {
   if (!grade) {
     return "학년 미설정";
@@ -48,7 +50,7 @@ const formatGrade = (grade?: number) => {
 export const MyPage = () => {
   const navigate = useNavigate();
   const { logout, userName, username } = useAuth();
-  const profileDraft = getOnboardingProfileDraft();
+  const profileDraft = useMemo(() => getOnboardingProfileDraft(), []);
 
   const nickname = profileDraft?.nickname || userName || "CamPost 사용자";
   const displayUsername = username || "아이디 정보 없음";
@@ -63,7 +65,9 @@ export const MyPage = () => {
   };
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-[#f5f7fb] px-5 py-8 text-slate-950 sm:px-8">
+    <main
+      className={`${PAGE_MIN_HEIGHT_CLASS} bg-surface px-5 py-8 text-slate-950 sm:px-8`}
+    >
       <div className="mx-auto w-full max-w-3xl">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -281,20 +285,22 @@ const MenuRow = ({ item }: { item: MenuItem }) => {
         </span>
       )}
 
-      <ChevronRight
-        aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-slate-300"
-      />
+      {item.to && (
+        <ChevronRight
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0 text-slate-300"
+        />
+      )}
     </>
   );
 
-  const className =
-    "flex w-full items-center gap-3 py-4 text-left transition hover:bg-slate-50 sm:px-2";
+  const rowClassName = "flex w-full items-center gap-3 py-4 text-left sm:px-2";
+  const linkClassName = `${rowClassName} transition hover:bg-slate-50`;
 
   if (item.to) {
     return (
       <Link
-        className={className}
+        className={linkClassName}
         to={item.to}
       >
         {content}
@@ -302,12 +308,5 @@ const MenuRow = ({ item }: { item: MenuItem }) => {
     );
   }
 
-  return (
-    <button
-      className={className}
-      type="button"
-    >
-      {content}
-    </button>
-  );
+  return <div className={rowClassName}>{content}</div>;
 };
