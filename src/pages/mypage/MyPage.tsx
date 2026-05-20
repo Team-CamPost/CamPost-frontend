@@ -55,6 +55,10 @@ type ProfileEditForm = {
   nickname: string;
 };
 
+type CompleteProfileEditForm = Omit<ProfileEditForm, "grade"> & {
+  grade: number;
+};
+
 const departmentNameByCode = new Map(
   DEPARTMENTS.map((department) => [
     department.backendDeptCode,
@@ -110,6 +114,12 @@ const getDepartmentIdByCode = (departmentCode?: string | null) =>
   DEPARTMENTS.find(
     (department) => department.backendDeptCode === departmentCode,
   )?.id ?? "";
+
+const isProfileEditFormComplete = (
+  form: ProfileEditForm,
+  trimmedNickname: string,
+): form is CompleteProfileEditForm =>
+  Boolean(form.department) && form.grade !== "" && Boolean(trimmedNickname);
 
 export const MyPage = () => {
   const navigate = useNavigate();
@@ -193,9 +203,7 @@ export const MyPage = () => {
   );
   const trimmedEditNickname = editForm.nickname.trim();
   const canSubmitProfileEdit =
-    Boolean(editForm.department) &&
-    editForm.grade !== "" &&
-    Boolean(trimmedEditNickname) &&
+    isProfileEditFormComplete(editForm, trimmedEditNickname) &&
     !isSavingProfile;
 
   const openProfileEditForm = () => {
@@ -219,7 +227,7 @@ export const MyPage = () => {
     setEditErrorMessage("");
     setEditSuccessMessage("");
 
-    if (!canSubmitProfileEdit || editForm.grade === "") {
+    if (!isProfileEditFormComplete(editForm, trimmedEditNickname)) {
       setEditErrorMessage("닉네임, 학과, 학년을 모두 입력해주세요.");
       return;
     }
@@ -242,7 +250,7 @@ export const MyPage = () => {
       if (
         updatedDepartmentId &&
         updatedProfile.department &&
-        updatedProfile.grade
+        updatedProfile.grade != null
       ) {
         setPreferredDepartmentId(updatedDepartmentId);
         saveOnboardingProfileDraft({
