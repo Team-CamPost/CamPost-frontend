@@ -18,16 +18,20 @@ interface NoticeDetailSidebarProps {
 }
 
 export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
-  const [isBookmarked, setIsBookmarked] = useState(notice.isBookmarked);
-  const [prevNoticeId, setPrevNoticeId] = useState(notice.id);
-
-  if (notice.id !== prevNoticeId) {
-    setPrevNoticeId(notice.id);
-    setIsBookmarked(notice.isBookmarked);
-  }
+  const [bookmarkState, setBookmarkState] = useState({
+    noticeId: notice.id,
+    isBookmarked: notice.isBookmarked,
+  });
+  const isBookmarked =
+    bookmarkState.noticeId === notice.id
+      ? bookmarkState.isBookmarked
+      : notice.isBookmarked;
 
   const handleBookmarkToggle = () => {
-    setIsBookmarked((prev) => !prev);
+    setBookmarkState({
+      noticeId: notice.id,
+      isBookmarked: !isBookmarked,
+    });
   };
 
   return (
@@ -123,7 +127,7 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
             <a
               href={notice.originalUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-[#2046FF]"
             >
               원문 이동 <ExternalLink size={18} />
@@ -184,8 +188,8 @@ const AttachmentItem = ({
 }) => {
   const downloadUrl =
     attachment.sourceUrl ||
-    (attachment.localPath ? toBackendAssetUrl(attachment.localPath) : "#");
-  const isDownloadable = downloadUrl !== "#";
+    (attachment.localPath ? toBackendAssetUrl(attachment.localPath) : "");
+  const isDownloadable = Boolean(downloadUrl);
   const meta = [
     attachment.ext?.toUpperCase(),
     formatFileSize(attachment.fileSize),
@@ -193,18 +197,8 @@ const AttachmentItem = ({
     .filter(Boolean)
     .join(" · ");
 
-  return (
-    <a
-      href={downloadUrl}
-      target="_blank"
-      rel="noreferrer"
-      aria-disabled={!isDownloadable}
-      className={`group flex items-start gap-3 rounded-2xl border border-slate-200 p-4 transition-colors ${
-        isDownloadable
-          ? "hover:border-[#2046FF]/30 hover:bg-[#2046FF]/5"
-          : "pointer-events-none bg-slate-50 opacity-70"
-      }`}
-    >
+  const content = (
+    <>
       <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-[#2046FF]">
         <FileText size={18} />
       </span>
@@ -227,6 +221,31 @@ const AttachmentItem = ({
           className="mt-1 shrink-0 text-slate-400 group-hover:text-[#2046FF]"
         />
       )}
+    </>
+  );
+
+  const className =
+    "group flex items-start gap-3 rounded-2xl border border-slate-200 p-4 transition-colors";
+
+  if (!isDownloadable) {
+    return (
+      <div
+        aria-disabled="true"
+        className={`${className} bg-slate-50 opacity-70`}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={downloadUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${className} hover:border-[#2046FF]/30 hover:bg-[#2046FF]/5`}
+    >
+      {content}
     </a>
   );
 };

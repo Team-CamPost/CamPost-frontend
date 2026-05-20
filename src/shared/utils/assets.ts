@@ -1,8 +1,64 @@
+import DOMPurify from "dompurify";
 import { API_BASE_URL } from "../config/env";
 
 const API_BASE = API_BASE_URL.replace(/\/$/, "");
 const ABSOLUTE_URL_PATTERN = /^(https?:)?\/\//i;
 const INLINE_URL_PATTERN = /^(data|blob):/i;
+
+const ALLOWED_TAGS = [
+  "a",
+  "b",
+  "blockquote",
+  "br",
+  "caption",
+  "col",
+  "colgroup",
+  "div",
+  "em",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "i",
+  "img",
+  "li",
+  "ol",
+  "p",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "u",
+  "ul",
+];
+
+const ALLOWED_ATTR = [
+  "alt",
+  "class",
+  "colspan",
+  "headers",
+  "height",
+  "href",
+  "loading",
+  "rel",
+  "rowspan",
+  "scope",
+  "span",
+  "src",
+  "target",
+  "title",
+  "width",
+];
 
 export const toBackendAssetUrl = (value: string | null | undefined) => {
   const path = value?.trim();
@@ -43,46 +99,42 @@ export const toNoticeAssetUrl = (
 export const rewriteNoticeAssetUrls = (
   html: string,
   sourceUrl: string | null | undefined,
-) =>
-  html.replace(
-    /\s(src|href)=(["'])(.*?)\2/gi,
-    (_match, attribute: string, quote: string, url: string) => {
-      const rewrittenUrl = toNoticeAssetUrl(url, sourceUrl);
-      return ` ${attribute}=${quote}${rewrittenUrl}${quote}`;
-    },
-  );
-
-export const sanitizeNoticeHtml = (html: string) => {
-  if (
-    typeof window === "undefined" ||
-    typeof DOMParser === "undefined" ||
-    !html
-  ) {
-    return html;
-  }
+) => {
+  if (!html || typeof DOMParser === "undefined") return html;
 
   const document = new DOMParser().parseFromString(html, "text/html");
 
-  document
-    .querySelectorAll("script, iframe, object, embed, link, meta")
-    .forEach((element) => element.remove());
+  document.querySelectorAll<HTMLElement>("[src]").forEach((element) => {
+    const src = element.getAttribute("src");
+    element.setAttribute("src", toNoticeAssetUrl(src, sourceUrl));
+  });
 
-  document.body.querySelectorAll("*").forEach((element) => {
-    Array.from(element.attributes).forEach((attribute) => {
-      const name = attribute.name.toLowerCase();
-      const value = attribute.value.trim().toLowerCase();
+  document.querySelectorAll<HTMLAnchorElement>("[href]").forEach((element) => {
+    const href = element.getAttribute("href");
+    element.setAttribute("href", toNoticeAssetUrl(href, sourceUrl));
 
-      if (name.startsWith("on")) {
-        element.removeAttribute(attribute.name);
-      }
-      if (
-        (name === "href" || name === "src") &&
-        value.startsWith("javascript:")
-      ) {
-        element.removeAttribute(attribute.name);
-      }
-    });
+    if (element.target === "_blank") {
+      element.rel = "noopener noreferrer";
+    }
   });
 
   return document.body.innerHTML;
 };
+
+export const sanitizeNoticeHtml = (html: string) =>
+  DOMPurify.sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: [
+      "script",
+      "iframe",
+      "object",
+      "embed",
+      "link",
+      "meta",
+      "svg",
+      "math",
+    ],
+    FORBID_ATTR: ["style"],
+  });
