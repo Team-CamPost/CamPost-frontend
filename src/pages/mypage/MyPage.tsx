@@ -26,6 +26,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import {
+  changeMyPassword,
   getMyProfile,
   updateMyProfile,
   UserApiError,
@@ -59,6 +60,12 @@ type CompleteProfileEditForm = Omit<ProfileEditForm, "grade"> & {
   grade: number;
 };
 
+type PasswordChangeForm = {
+  currentPassword: string;
+  newPassword: string;
+  newPasswordConfirm: string;
+};
+
 const departmentNameByCode = new Map(
   DEPARTMENTS.map((department) => [
     department.backendDeptCode,
@@ -68,6 +75,7 @@ const departmentNameByCode = new Map(
 
 const PAGE_MIN_HEIGHT_CLASS = "min-h-[calc(100vh-4rem)]";
 const MAX_NICKNAME_LENGTH = 50;
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 const gradeOptions = [
   { value: 1, label: "1학년" },
   { value: 2, label: "2학년" },
@@ -121,6 +129,12 @@ const isProfileEditFormComplete = (
 ): form is CompleteProfileEditForm =>
   Boolean(form.department) && form.grade !== "" && Boolean(trimmedNickname);
 
+const initialPasswordChangeForm: PasswordChangeForm = {
+  currentPassword: "",
+  newPassword: "",
+  newPasswordConfirm: "",
+};
+
 export const MyPage = () => {
   const navigate = useNavigate();
   const { logout, userName, username } = useAuth();
@@ -137,6 +151,13 @@ export const MyPage = () => {
   const [editErrorMessage, setEditErrorMessage] = useState("");
   const [editSuccessMessage, setEditSuccessMessage] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState<PasswordChangeForm>(
+    initialPasswordChangeForm,
+  );
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+  const [passwordSuccessMessage, setPasswordSuccessMessage] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -205,8 +226,14 @@ export const MyPage = () => {
   const canSubmitProfileEdit =
     isProfileEditFormComplete(editForm, trimmedEditNickname) &&
     !isSavingProfile;
+  const canSubmitPasswordChange =
+    Boolean(passwordForm.currentPassword.trim()) &&
+    Boolean(passwordForm.newPassword.trim()) &&
+    Boolean(passwordForm.newPasswordConfirm.trim()) &&
+    !isSavingPassword;
 
   const openProfileEditForm = () => {
+    setIsChangingPassword(false);
     setEditForm({
       department: departmentCode || "",
       grade: grade || "",
@@ -217,9 +244,22 @@ export const MyPage = () => {
     setIsEditingProfile(true);
   };
 
+  const openPasswordChangeForm = () => {
+    setIsEditingProfile(false);
+    setPasswordForm(initialPasswordChangeForm);
+    setPasswordErrorMessage("");
+    setPasswordSuccessMessage("");
+    setIsChangingPassword(true);
+  };
+
   const closeProfileEditForm = () => {
     setIsEditingProfile(false);
     setEditErrorMessage("");
+  };
+
+  const closePasswordChangeForm = () => {
+    setIsChangingPassword(false);
+    setPasswordErrorMessage("");
   };
 
   const handleProfileEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -278,6 +318,74 @@ export const MyPage = () => {
       setEditErrorMessage(apiError.message);
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handlePasswordChangeSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setPasswordErrorMessage("");
+    setPasswordSuccessMessage("");
+
+    const currentPassword = passwordForm.currentPassword;
+    const newPassword = passwordForm.newPassword;
+    const newPasswordConfirm = passwordForm.newPasswordConfirm;
+
+    if (
+      !currentPassword.trim() ||
+      !newPassword.trim() ||
+      !newPasswordConfirm.trim()
+    ) {
+      setPasswordErrorMessage(
+        "현재 비밀번호와 새 비밀번호를 모두 입력해주세요.",
+      );
+      return;
+    }
+
+    if (!passwordPattern.test(newPassword)) {
+      setPasswordErrorMessage(
+        "새 비밀번호는 영문과 숫자를 모두 포함해 8자 이상으로 입력해주세요.",
+      );
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      setPasswordErrorMessage("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setPasswordErrorMessage("새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+      return;
+    }
+
+    setIsSavingPassword(true);
+
+    try {
+      await changeMyPassword({
+        currentPassword,
+        newPassword,
+      });
+
+      setPasswordForm(initialPasswordChangeForm);
+      setPasswordSuccessMessage("비밀번호가 변경되었습니다.");
+      setIsChangingPassword(false);
+    } catch (error) {
+      const apiError =
+        error instanceof UserApiError
+          ? error
+          : new UserApiError("비밀번호를 변경하지 못했습니다.");
+
+      if (apiError.status === 401 && apiError.code !== "AUTH401_CREDENTIALS") {
+        logout();
+        navigate(ROUTES.login, { replace: true });
+        return;
+      }
+
+      setPasswordErrorMessage(apiError.message);
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -361,6 +469,12 @@ export const MyPage = () => {
           {editSuccessMessage && (
             <div className="mt-5 rounded-xl bg-[#2046FF]/10 px-4 py-3 text-sm font-bold text-[#2046FF]">
               {editSuccessMessage}
+            </div>
+          )}
+
+          {passwordSuccessMessage && (
+            <div className="mt-5 rounded-xl bg-[#2046FF]/10 px-4 py-3 text-sm font-bold text-[#2046FF]">
+              {passwordSuccessMessage}
             </div>
           )}
         </section>
@@ -524,6 +638,115 @@ export const MyPage = () => {
           </section>
         )}
 
+        {isChangingPassword && (
+          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">
+                  비밀번호 변경
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.
+                </p>
+              </div>
+
+              <button
+                aria-label="비밀번호 변경 닫기"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+                onClick={closePasswordChangeForm}
+                type="button"
+              >
+                <X
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                />
+              </button>
+            </div>
+
+            <form
+              className="mt-5 space-y-5"
+              noValidate
+              onSubmit={handlePasswordChangeSubmit}
+            >
+              <PasswordField
+                autoComplete="current-password"
+                id="current-password"
+                label="현재 비밀번호"
+                onChange={(value) => {
+                  setPasswordForm((form) => ({
+                    ...form,
+                    currentPassword: value,
+                  }));
+                  setPasswordErrorMessage("");
+                }}
+                placeholder="현재 비밀번호 입력"
+                value={passwordForm.currentPassword}
+              />
+
+              <PasswordField
+                autoComplete="new-password"
+                id="new-password"
+                label="새 비밀번호"
+                onChange={(value) => {
+                  setPasswordForm((form) => ({
+                    ...form,
+                    newPassword: value,
+                  }));
+                  setPasswordErrorMessage("");
+                }}
+                placeholder="영문+숫자 포함 8자 이상"
+                value={passwordForm.newPassword}
+              />
+
+              <PasswordField
+                autoComplete="new-password"
+                id="new-password-confirm"
+                label="새 비밀번호 확인"
+                onChange={(value) => {
+                  setPasswordForm((form) => ({
+                    ...form,
+                    newPasswordConfirm: value,
+                  }));
+                  setPasswordErrorMessage("");
+                }}
+                placeholder="새 비밀번호 재입력"
+                value={passwordForm.newPasswordConfirm}
+              />
+
+              <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+                새 비밀번호는 영문과 숫자를 모두 포함해 8자 이상이어야 합니다.
+              </div>
+
+              {passwordErrorMessage && (
+                <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                  <AlertCircle
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                  />
+                  {passwordErrorMessage}
+                </div>
+              )}
+
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                  onClick={closePasswordChangeForm}
+                  type="button"
+                >
+                  취소
+                </button>
+                <button
+                  className="h-11 rounded-xl bg-[#2046FF] px-5 text-sm font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  disabled={!canSubmitPasswordChange}
+                  type="submit"
+                >
+                  {isSavingPassword ? "변경 중" : "변경"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+
         <div className="mt-5 space-y-4">
           <MenuSection
             items={[
@@ -537,7 +760,7 @@ export const MyPage = () => {
                 title: "비밀번호 변경",
                 description: "현재 비밀번호 확인 후 변경",
                 icon: <KeyRound className="h-5 w-5" />,
-                badge: "준비 중",
+                onClick: openPasswordChangeForm,
               },
               {
                 title: "이메일 설정",
@@ -630,6 +853,42 @@ const ProfileFact = ({
       {label}
     </div>
     <p className="mt-1 truncate text-sm font-bold text-slate-900">{value}</p>
+  </div>
+);
+
+const PasswordField = ({
+  id,
+  label,
+  placeholder,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+}) => (
+  <div>
+    <label
+      className="text-sm font-bold text-slate-700"
+      htmlFor={id}
+    >
+      {label}
+    </label>
+    <input
+      autoComplete={autoComplete}
+      className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 transition outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-4 focus:ring-[#2046FF]/10"
+      id={id}
+      onChange={(event) => {
+        onChange(event.target.value);
+      }}
+      placeholder={placeholder}
+      type="password"
+      value={value}
+    />
   </div>
 );
 
