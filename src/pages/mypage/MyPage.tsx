@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   Bell,
   Bookmark,
   ChevronRight,
@@ -14,9 +15,14 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
+import {
+  getMyProfile,
+  UserApiError,
+  type UserProfileResponse,
+} from "../../shared/api/user";
 import { DEPARTMENTS } from "../../shared/constants/departments";
 import { useAuth } from "../../shared/hooks/useAuth";
 import { getOnboardingProfileDraft } from "../../shared/hooks/useOnboardingProfileDraft";
@@ -39,7 +45,15 @@ const departmentNameByCode = new Map(
 
 const PAGE_MIN_HEIGHT_CLASS = "min-h-[calc(100vh-4rem)]";
 
-const formatGrade = (grade?: number) => {
+const getDepartmentName = (department?: string | null) => {
+  if (!department?.trim()) {
+    return "학과 미설정";
+  }
+
+  return departmentNameByCode.get(department) ?? department;
+};
+
+const formatGrade = (grade?: number | null) => {
   if (!grade) {
     return "학년 미설정";
   }
@@ -51,13 +65,62 @@ export const MyPage = () => {
   const navigate = useNavigate();
   const { logout, userName, username } = useAuth();
   const profileDraft = useMemo(() => getOnboardingProfileDraft(), []);
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [profileErrorMessage, setProfileErrorMessage] = useState("");
 
-  const nickname = profileDraft?.nickname || userName || "CamPost 사용자";
-  const displayUsername = username || "아이디 정보 없음";
-  const departmentName = profileDraft?.departmentCode
-    ? (departmentNameByCode.get(profileDraft.departmentCode) ?? "학과 미설정")
-    : "학과 미설정";
-  const gradeLabel = formatGrade(profileDraft?.grade);
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        const myProfile = await getMyProfile();
+
+        if (!isMounted) {
+          return;
+        }
+
+        setProfile(myProfile);
+        setProfileErrorMessage("");
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        const apiError =
+          error instanceof UserApiError
+            ? error
+            : new UserApiError("내 정보를 불러오지 못했습니다.");
+
+        if (apiError.status === 401) {
+          logout();
+          navigate(ROUTES.login, { replace: true });
+          return;
+        }
+
+        setProfileErrorMessage(apiError.message);
+      } finally {
+        if (isMounted) {
+          setIsProfileLoading(false);
+        }
+      }
+    };
+
+    void fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logout, navigate]);
+
+  const nickname =
+    profile?.nickname || profileDraft?.nickname || userName || "CamPost 사용자";
+  const displayUsername = profile?.username || username || "아이디 정보 없음";
+  const email = profile?.email || "이메일 정보 없음";
+  const departmentName = profile?.department
+    ? getDepartmentName(profile.department)
+    : getDepartmentName(profileDraft?.departmentCode);
+  const gradeLabel = formatGrade(profile?.grade ?? profileDraft?.grade);
 
   const handleLogout = () => {
     logout();
@@ -87,6 +150,11 @@ export const MyPage = () => {
                 <p className="mt-1 text-sm text-slate-500">
                   {departmentName} · {gradeLabel}
                 </p>
+                {isProfileLoading && (
+                  <p className="mt-2 text-xs font-bold text-slate-400">
+                    내 정보를 불러오는 중입니다.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -110,16 +178,26 @@ export const MyPage = () => {
               value={displayUsername}
             />
             <ProfileFact
-              icon={<GraduationCap className="h-4 w-4" />}
-              label="소속"
-              value={departmentName}
+              icon={<Mail className="h-4 w-4" />}
+              label="이메일"
+              value={email}
             />
             <ProfileFact
-              icon={<Clock3 className="h-4 w-4" />}
-              label="학년"
-              value={gradeLabel}
+              icon={<GraduationCap className="h-4 w-4" />}
+              label="소속"
+              value={`${departmentName} · ${gradeLabel}`}
             />
           </div>
+
+          {profileErrorMessage && (
+            <div className="mt-5 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+              <AlertCircle
+                aria-hidden="true"
+                className="mt-0.5 h-4 w-4 shrink-0"
+              />
+              {profileErrorMessage}
+            </div>
+          )}
         </section>
 
         <div className="mt-5 space-y-4">

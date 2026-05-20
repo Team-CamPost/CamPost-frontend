@@ -17,6 +17,36 @@ export interface OnboardingProfileResponse {
   profileCompleted: boolean;
 }
 
+export interface UserProfileResponse {
+  userId: number;
+  username: string;
+  email: string;
+  nickname: string;
+  department: string | null;
+  grade: number | null;
+  role: string;
+  profileCompleted: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export const getMyProfile = async () => {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new ApiClientError("로그인이 필요합니다.", "TOKEN402", 401);
+  }
+
+  try {
+    const response =
+      await apiClient.get<ApiResponse<UserProfileResponse>>("/api/v1/users/me");
+
+    return unwrapResponse(response.data);
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+};
+
 export const saveOnboardingProfile = async ({
   department,
   grade,
