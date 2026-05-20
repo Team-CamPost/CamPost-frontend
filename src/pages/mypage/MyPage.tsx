@@ -61,6 +61,24 @@ const formatGrade = (grade?: number | null) => {
   return grade >= 5 ? "5학년 이상" : `${grade}학년`;
 };
 
+const formatAffiliation = ({
+  departmentName,
+  gradeLabel,
+  hasDepartment,
+  hasGrade,
+}: {
+  departmentName: string;
+  gradeLabel: string;
+  hasDepartment: boolean;
+  hasGrade: boolean;
+}) => {
+  if (!hasDepartment && !hasGrade) {
+    return "소속 정보 미설정";
+  }
+
+  return `${departmentName} · ${gradeLabel}`;
+};
+
 export const MyPage = () => {
   const navigate = useNavigate();
   const { logout, userName, username } = useAuth();
@@ -117,10 +135,18 @@ export const MyPage = () => {
     profile?.nickname || profileDraft?.nickname || userName || "CamPost 사용자";
   const displayUsername = profile?.username || username || "아이디 정보 없음";
   const email = profile?.email || "이메일 정보 없음";
-  const departmentName = profile?.department
-    ? getDepartmentName(profile.department)
-    : getDepartmentName(profileDraft?.departmentCode);
-  const gradeLabel = formatGrade(profile?.grade ?? profileDraft?.grade);
+  const departmentCode = profile?.department ?? profileDraft?.departmentCode;
+  const grade = profile?.grade ?? profileDraft?.grade;
+  const hasDepartment = Boolean(departmentCode?.trim());
+  const hasGrade = Boolean(grade);
+  const departmentName = getDepartmentName(departmentCode);
+  const gradeLabel = formatGrade(grade);
+  const affiliationLabel = formatAffiliation({
+    departmentName,
+    gradeLabel,
+    hasDepartment,
+    hasGrade,
+  });
 
   const handleLogout = () => {
     logout();
@@ -148,7 +174,7 @@ export const MyPage = () => {
                   {nickname}
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  {departmentName} · {gradeLabel}
+                  {affiliationLabel}
                 </p>
                 {isProfileLoading && (
                   <p className="mt-2 text-xs font-bold text-slate-400">
@@ -185,7 +211,7 @@ export const MyPage = () => {
             <ProfileFact
               icon={<GraduationCap className="h-4 w-4" />}
               label="소속"
-              value={`${departmentName} · ${gradeLabel}`}
+              value={affiliationLabel}
             />
           </div>
 
