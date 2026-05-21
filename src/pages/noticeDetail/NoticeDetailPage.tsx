@@ -1,21 +1,22 @@
+import { useQuery } from "@tanstack/react-query";
+import { ChevronRight } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
-import { ChevronRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { NoticeDetailContent } from "../../features/noticeDetail/components/NoticeDetailContent";
-import { NoticeDetailSidebar } from "../../features/noticeDetail/components/NoticeDetailSidebar";
 import { NoticeDetailRecommendations } from "../../features/noticeDetail/components/NoticeDetailRecommendations";
+import { NoticeDetailSidebar } from "../../features/noticeDetail/components/NoticeDetailSidebar";
+import type {
+  NoticeAttachmentData,
+  NoticeDetailData,
+  NoticeDetailDto,
+} from "../../features/noticeDetail/types";
+import type { NoticeCardData } from "../../features/dashboard/types/notice";
 import { fetchNoticeDetail, fetchNotices } from "../../shared/api/notice";
 import {
   DEFAULT_DEPARTMENT_ID,
   getBackendDeptCodeByDepartmentId,
 } from "../../shared/constants/departments";
 import { formatDate, getDDay } from "../../shared/utils/date";
-import type { NoticeCardData } from "../../features/dashboard/types/notice";
-import type {
-  NoticeDetailData,
-  NoticeDetailDto,
-} from "../../features/noticeDetail/types";
 
 export const NoticeDetailPage = () => {
   const { departmentId = DEFAULT_DEPARTMENT_ID, noticeId = "" } = useParams();
@@ -111,7 +112,6 @@ export const NoticeDetailPage = () => {
 
   return (
     <main className="w-full pb-20">
-      {/* 상단 Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-slate-500">
         <Link
           to={ROUTES.departmentDashboard(departmentId)}
@@ -123,13 +123,11 @@ export const NoticeDetailPage = () => {
         <span className="font-medium text-slate-900">공지 상세</span>
       </div>
 
-      {/* 메인 2단 레이아웃 */}
       <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
         <NoticeDetailContent notice={notice} />
         <NoticeDetailSidebar notice={notice} />
       </div>
 
-      {/* 하단: 이런 공지는 어때요? (Recommendations) */}
       <NoticeDetailRecommendations
         departmentId={departmentId}
         recommendedNotices={recommendedNotices}
@@ -142,6 +140,28 @@ const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
   const tags = [notice.department, notice.category].filter(
     (value): value is string => Boolean(value && value.trim()),
   );
+  const attachments: NoticeAttachmentData[] = (notice.attachments ?? []).map(
+    (attachment) => ({
+      id: attachment.id,
+      fileKey: attachment.fileKey || "",
+      originalName: attachment.originalName || "attachment",
+      ext: attachment.ext,
+      fileType: attachment.fileType,
+      mimeType: attachment.mimeType,
+      fileSize: attachment.fileSize,
+      checksum: attachment.checksum,
+      sourceUrl: attachment.sourceUrl,
+      localPath: attachment.localPath,
+      downloadOk: attachment.downloadOk,
+      extractedText: attachment.extractedText,
+      extractedChars: attachment.extractedChars,
+      parser: attachment.parser,
+      parseQuality: attachment.parseQuality,
+      parseOk: attachment.parseOk,
+      downloadCached: attachment.downloadCached,
+      createdAt: attachment.createdAt,
+    }),
+  );
 
   return {
     id: String(notice.id),
@@ -150,6 +170,8 @@ const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
     department: notice.department || "학과 미정",
     date: formatDate(notice.date),
     deadline: formatDate(notice.deadline),
+    deadlineTime: notice.deadlineTime ?? undefined,
+    deadlineAt: notice.deadlineAt ?? undefined,
     dDay: getDDay(notice.deadline) ?? undefined,
     author: notice.author || "작성자 미상",
     target: notice.target || "제한 없음",
@@ -157,6 +179,10 @@ const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
     views: notice.views ?? 0,
     isBookmarked: false,
     bodyText: notice.bodyText || "",
+    bodyHtml: notice.bodyHtml || "",
+    contentHtml: notice.contentHtml || "",
+    contentStats: notice.contentStats,
+    attachments,
     originalUrl: notice.sourceUrl || "#",
     tags,
   };
