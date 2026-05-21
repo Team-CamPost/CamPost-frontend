@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Eye,
   FileText,
+  Image,
   Paperclip,
   Share2,
 } from "lucide-react";
@@ -196,11 +197,13 @@ const AttachmentItem = ({
   ]
     .filter(Boolean)
     .join(" · ");
+  const isImage = isImageAttachment(attachment);
+  const statusLabel = getAttachmentStatusLabel(attachment);
 
   const content = (
     <>
       <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-[#2046FF]">
-        <FileText size={18} />
+        {isImage ? <Image size={18} /> : <FileText size={18} />}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-bold text-slate-900">
@@ -209,9 +212,9 @@ const AttachmentItem = ({
         {meta && (
           <span className="mt-1 block text-xs text-slate-500">{meta}</span>
         )}
-        {attachment.parseOk !== null && (
+        {statusLabel && (
           <span className="mt-2 block text-xs font-semibold text-slate-500">
-            {attachment.parseOk ? "본문 추출 완료" : "본문 추출 실패"}
+            {statusLabel}
           </span>
         )}
       </span>
@@ -248,6 +251,27 @@ const AttachmentItem = ({
       {content}
     </a>
   );
+};
+
+const IMAGE_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "bmp",
+  "svg",
+]);
+
+const isImageAttachment = (attachment: NoticeAttachmentData) =>
+  attachment.fileType?.toLowerCase() === "image" ||
+  attachment.mimeType?.toLowerCase().startsWith("image/") ||
+  IMAGE_EXTENSIONS.has(attachment.ext?.toLowerCase() ?? "");
+
+const getAttachmentStatusLabel = (attachment: NoticeAttachmentData) => {
+  if (isImageAttachment(attachment)) return "이미지 파일";
+  if (attachment.parseOk === null) return "";
+  return attachment.parseOk ? "본문 추출 완료" : "본문 추출 실패";
 };
 
 const formatFileSize = (bytes: number | null) => {
