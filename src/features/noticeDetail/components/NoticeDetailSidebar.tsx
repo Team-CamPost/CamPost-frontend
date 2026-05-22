@@ -187,9 +187,14 @@ const AttachmentItem = ({
 }: {
   attachment: NoticeAttachmentData;
 }) => {
+  const previewUrl =
+    attachment.conversionStatus === "success" && attachment.previewPdfPath
+      ? toBackendAssetUrl(attachment.previewPdfPath)
+      : "";
   const downloadUrl =
     attachment.sourceUrl ||
     (attachment.localPath ? toBackendAssetUrl(attachment.localPath) : "");
+  const hasPdfPreview = Boolean(previewUrl);
   const isDownloadable = Boolean(downloadUrl);
   const meta = [
     attachment.ext?.toUpperCase(),
@@ -218,19 +223,13 @@ const AttachmentItem = ({
           </span>
         )}
       </span>
-      {isDownloadable && (
-        <Download
-          size={17}
-          className="mt-1 shrink-0 text-slate-400 group-hover:text-[#2046FF]"
-        />
-      )}
     </>
   );
 
   const className =
     "group flex items-start gap-3 rounded-2xl border border-slate-200 p-4 transition-colors";
 
-  if (!isDownloadable) {
+  if (!isDownloadable && !hasPdfPreview) {
     return (
       <div
         aria-disabled="true"
@@ -242,14 +241,36 @@ const AttachmentItem = ({
   }
 
   return (
-    <a
-      href={downloadUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className={`${className} hover:border-[#2046FF]/30 hover:bg-[#2046FF]/5`}
     >
       {content}
-    </a>
+      <span className="flex shrink-0 flex-col gap-2">
+        {hasPdfPreview && (
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-[#2046FF]/20 px-2.5 text-xs font-bold whitespace-nowrap text-[#2046FF] transition-colors hover:border-[#2046FF]/40 hover:bg-white"
+            title="PDF 미리보기"
+          >
+            <Eye size={14} />
+            PDF
+          </a>
+        )}
+        {isDownloadable && (
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center justify-center rounded-xl border border-slate-200 px-2.5 text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-[#2046FF]"
+            title="다운로드"
+          >
+            <Download size={15} />
+          </a>
+        )}
+      </span>
+    </div>
   );
 };
 
@@ -269,6 +290,12 @@ const isImageAttachment = (attachment: NoticeAttachmentData) =>
   IMAGE_EXTENSIONS.has(attachment.ext?.toLowerCase() ?? "");
 
 const getAttachmentStatusLabel = (attachment: NoticeAttachmentData) => {
+  if (
+    attachment.conversionStatus === "success" &&
+    Boolean(attachment.previewPdfPath)
+  ) {
+    return "PDF 미리보기 가능";
+  }
   if (isImageAttachment(attachment)) return "이미지 파일";
   if (attachment.parseOk === null) return "";
   return attachment.parseOk ? "본문 추출 완료" : "본문 추출 실패";

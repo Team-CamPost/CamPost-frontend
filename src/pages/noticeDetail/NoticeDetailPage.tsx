@@ -159,6 +159,12 @@ const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
       parseQuality: attachment.parseQuality,
       parseOk: attachment.parseOk,
       downloadCached: attachment.downloadCached,
+      previewPdfPath: attachment.previewPdfPath,
+      previewPdfSize: attachment.previewPdfSize,
+      previewPdfChecksum: attachment.previewPdfChecksum,
+      conversionStatus: attachment.conversionStatus,
+      conversionEngine: attachment.conversionEngine,
+      conversionError: attachment.conversionError,
       createdAt: attachment.createdAt,
     }),
   );
