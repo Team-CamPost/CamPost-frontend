@@ -23,8 +23,8 @@ export const Header = () => {
   };
 
   const handleLogout = () => {
-    logout();
     navigate(DEFAULT_PUBLIC_ENTRY_PATH, { replace: true });
+    logout();
   };
 
   return (
