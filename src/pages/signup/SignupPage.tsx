@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { CheckCircle2, Loader2, UserPlus } from "lucide-react";
 import { ROUTES } from "../../app/router/paths";
 import {
+  AuthApiError,
   checkEmailVerificationCode,
   checkUsernameAvailability,
   sendEmailVerificationCode,
@@ -261,7 +262,7 @@ export const SignupPage = () => {
       if (!result.verified) {
         setErrors((prevErrors) => ({
           ...prevErrors,
-          emailCode: "이메일 인증번호가 유효하지 않습니다.",
+          emailCode: "인증번호가 일치하지 않습니다.",
         }));
         return;
       }
@@ -269,6 +270,17 @@ export const SignupPage = () => {
       setVerifiedEmail(normalizedEmail);
       setEmailCodeCheckMessage("인증번호가 확인되었습니다.");
     } catch (error) {
+      if (
+        error instanceof AuthApiError &&
+        error.code === "AUTH400_EMAIL_VERIFICATION"
+      ) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          emailCode: "인증번호가 일치하지 않습니다.",
+        }));
+        return;
+      }
+
       setErrors((prevErrors) => ({
         ...prevErrors,
         emailCode: getAuthErrorMessage(
@@ -312,9 +324,7 @@ export const SignupPage = () => {
         password: form.password,
       });
       setIsSubmitted(true);
-      setSubmitMessage(
-        "회원가입이 완료되었습니다. 로그인 페이지로 이동해 주세요.",
-      );
+      setSubmitMessage("");
     } catch (error) {
       setSubmitMessage(
         getAuthErrorMessage(error, "회원가입 처리에 실패했습니다."),
@@ -329,6 +339,35 @@ export const SignupPage = () => {
     isSendingEmailCode ||
     isCheckingEmailCode ||
     isSubmitting;
+
+  if (isSubmitted) {
+    return (
+      <section className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-4 py-10">
+        <div className="shadow-soft w-full max-w-[440px] rounded-lg border border-slate-200 bg-white p-8 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <CheckCircle2
+              aria-hidden="true"
+              className="h-7 w-7"
+            />
+          </div>
+
+          <h1 className="mt-5 text-2xl font-bold text-slate-950">
+            회원가입이 완료되었습니다.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            로그인 후 CamPost에서 필요한 공지를 확인해보세요.
+          </p>
+
+          <Link
+            className="mt-7 flex h-11 w-full items-center justify-center rounded-md bg-[#2046FF] text-sm font-semibold text-white transition hover:bg-[#1838d8]"
+            to={ROUTES.login}
+          >
+            로그인
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-4 py-10">
