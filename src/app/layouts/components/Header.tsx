@@ -32,7 +32,7 @@ export const Header = () => {
       <nav className="mx-auto flex h-16 w-full items-center justify-between px-6 text-sm lg:px-8">
         <a
           className="flex items-center gap-2 text-xl font-bold tracking-tight transition-opacity"
-          href="/"
+          href={DEFAULT_PUBLIC_ENTRY_PATH}
           onClick={handleLogoClick}
         >
           <img
