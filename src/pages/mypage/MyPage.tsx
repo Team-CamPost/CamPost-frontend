@@ -27,6 +27,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
 import {
   changeMyPassword,
+  deleteMyAccount,
   getMyProfile,
   updateMyProfile,
   UserApiError,
@@ -35,10 +36,14 @@ import {
 import { DEPARTMENTS } from "../../shared/constants/departments";
 import { useAuth } from "../../shared/hooks/useAuth";
 import {
+  clearOnboardingProfileDraft,
   getOnboardingProfileDraft,
   saveOnboardingProfileDraft,
 } from "../../shared/hooks/useOnboardingProfileDraft";
-import { setPreferredDepartmentId } from "../../shared/hooks/usePreferredDepartment";
+import {
+  clearPreferredDepartmentId,
+  setPreferredDepartmentId,
+} from "../../shared/hooks/usePreferredDepartment";
 
 type MenuItem = {
   title: string;
@@ -64,6 +69,10 @@ type PasswordChangeForm = {
   currentPassword: string;
   newPassword: string;
   newPasswordConfirm: string;
+};
+
+type AccountDeleteForm = {
+  currentPassword: string;
 };
 
 const departmentNameByCode = new Map(
@@ -135,6 +144,10 @@ const initialPasswordChangeForm: PasswordChangeForm = {
   newPasswordConfirm: "",
 };
 
+const initialAccountDeleteForm: AccountDeleteForm = {
+  currentPassword: "",
+};
+
 export const MyPage = () => {
   const navigate = useNavigate();
   const { logout, userName, username } = useAuth();
@@ -158,6 +171,13 @@ export const MyPage = () => {
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
   const [passwordSuccessMessage, setPasswordSuccessMessage] = useState("");
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [accountDeleteForm, setAccountDeleteForm] = useState<AccountDeleteForm>(
+    initialAccountDeleteForm,
+  );
+  const [accountDeleteErrorMessage, setAccountDeleteErrorMessage] =
+    useState("");
+  const [isSavingAccountDelete, setIsSavingAccountDelete] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -231,9 +251,12 @@ export const MyPage = () => {
     Boolean(passwordForm.newPassword.trim()) &&
     Boolean(passwordForm.newPasswordConfirm.trim()) &&
     !isSavingPassword;
+  const canSubmitAccountDelete =
+    Boolean(accountDeleteForm.currentPassword.trim()) && !isSavingAccountDelete;
 
   const openProfileEditForm = () => {
     setIsChangingPassword(false);
+    setIsDeletingAccount(false);
     setEditForm({
       department: departmentCode || "",
       grade: grade || "",
@@ -246,11 +269,22 @@ export const MyPage = () => {
 
   const openPasswordChangeForm = () => {
     setIsEditingProfile(false);
+    setIsDeletingAccount(false);
     setEditSuccessMessage("");
     setPasswordForm(initialPasswordChangeForm);
     setPasswordErrorMessage("");
     setPasswordSuccessMessage("");
     setIsChangingPassword(true);
+  };
+
+  const openAccountDeleteForm = () => {
+    setIsEditingProfile(false);
+    setIsChangingPassword(false);
+    setEditSuccessMessage("");
+    setPasswordSuccessMessage("");
+    setAccountDeleteForm(initialAccountDeleteForm);
+    setAccountDeleteErrorMessage("");
+    setIsDeletingAccount(true);
   };
 
   const closeProfileEditForm = () => {
@@ -261,6 +295,11 @@ export const MyPage = () => {
   const closePasswordChangeForm = () => {
     setIsChangingPassword(false);
     setPasswordErrorMessage("");
+  };
+
+  const closeAccountDeleteForm = () => {
+    setIsDeletingAccount(false);
+    setAccountDeleteErrorMessage("");
   };
 
   const handleProfileEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -392,6 +431,51 @@ export const MyPage = () => {
       setPasswordErrorMessage(apiError.message);
     } finally {
       setIsSavingPassword(false);
+    }
+  };
+
+  const handleAccountDeleteSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setAccountDeleteErrorMessage("");
+
+    const currentPassword = accountDeleteForm.currentPassword;
+
+    if (!currentPassword.trim()) {
+      setAccountDeleteErrorMessage("현재 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsSavingAccountDelete(true);
+
+    try {
+      await deleteMyAccount({ currentPassword });
+
+      clearOnboardingProfileDraft();
+      clearPreferredDepartmentId();
+      logout();
+      navigate(ROUTES.home, { replace: true });
+    } catch (error) {
+      const apiError =
+        error instanceof UserApiError
+          ? error
+          : new UserApiError("회원탈퇴를 처리하지 못했습니다.");
+
+      if (apiError.status === 401 && apiError.code !== "AUTH401_CREDENTIALS") {
+        logout();
+        navigate(ROUTES.login, { replace: true });
+        return;
+      }
+
+      if (apiError.code === "AUTH401_CREDENTIALS") {
+        setAccountDeleteErrorMessage("비밀번호가 올바르지 않습니다.");
+        return;
+      }
+
+      setAccountDeleteErrorMessage(apiError.message);
+    } finally {
+      setIsSavingAccountDelete(false);
     }
   };
 
@@ -833,13 +917,102 @@ export const MyPage = () => {
                 description: "계정과 개인 설정 삭제",
                 icon: <Trash2 className="h-5 w-5" />,
                 danger: true,
-                badge: "준비 중",
+                onClick: openAccountDeleteForm,
               },
             ]}
             title="보안"
           />
         </div>
       </div>
+
+      {isDeletingAccount && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-5 py-8 backdrop-blur-sm"
+          onClick={closeAccountDeleteForm}
+          role="dialog"
+        >
+          <section
+            className="w-full max-w-lg rounded-2xl border border-red-100 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:p-6"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-red-600">회원탈퇴</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  탈퇴하면 계정 정보와 개인 설정이 삭제되며 다시 복구할 수
+                  없습니다.
+                </p>
+              </div>
+
+              <button
+                aria-label="회원탈퇴 닫기"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+                onClick={closeAccountDeleteForm}
+                type="button"
+              >
+                <X
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                />
+              </button>
+            </div>
+
+            <form
+              className="mt-5 space-y-5"
+              noValidate
+              onSubmit={handleAccountDeleteSubmit}
+            >
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                회원탈퇴를 진행하려면 현재 비밀번호를 입력해주세요.
+              </div>
+
+              <PasswordField
+                autoComplete="current-password"
+                id="account-delete-current-password"
+                label="현재 비밀번호"
+                onChange={(value) => {
+                  setAccountDeleteForm({
+                    currentPassword: value,
+                  });
+                  setAccountDeleteErrorMessage("");
+                }}
+                placeholder="현재 비밀번호 입력"
+                value={accountDeleteForm.currentPassword}
+              />
+
+              {accountDeleteErrorMessage && (
+                <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                  <AlertCircle
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                  />
+                  {accountDeleteErrorMessage}
+                </div>
+              )}
+
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                  onClick={closeAccountDeleteForm}
+                  type="button"
+                >
+                  취소
+                </button>
+                <button
+                  className="h-11 rounded-xl bg-red-600 px-5 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  disabled={!canSubmitAccountDelete}
+                  type="submit"
+                >
+                  {isSavingAccountDelete ? "탈퇴 처리 중" : "회원탈퇴"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   );
 };

@@ -99,6 +99,31 @@ export const changeMyPassword = async ({
   }
 };
 
+export const deleteMyAccount = async ({
+  currentPassword,
+}: {
+  currentPassword: string;
+}) => {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new ApiClientError("로그인이 필요합니다.", "TOKEN402", 401);
+  }
+
+  try {
+    const response = await apiClient.delete<ApiResponse<null>>(
+      "/api/v1/users/me",
+      {
+        data: { currentPassword },
+      },
+    );
+
+    return unwrapResponse(response.data);
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+};
+
 export const saveOnboardingProfile = async ({
   department,
   grade,
