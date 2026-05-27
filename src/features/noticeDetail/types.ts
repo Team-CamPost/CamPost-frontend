@@ -48,6 +48,12 @@ export interface NoticeAttachmentData {
   parseQuality: string | null;
   parseOk: boolean | null;
   downloadCached: boolean | null;
+  previewPdfPath: string | null;
+  previewPdfSize: number | null;
+  previewPdfChecksum: string | null;
+  conversionStatus: string | null;
+  conversionEngine: string | null;
+  conversionError: string | null;
   createdAt: string | null;
 }
 
@@ -94,5 +100,11 @@ export interface NoticeAttachmentDto {
   parseQuality: string | null;
   parseOk: boolean | null;
   downloadCached: boolean | null;
+  previewPdfPath: string | null;
+  previewPdfSize: number | null;
+  previewPdfChecksum: string | null;
+  conversionStatus: string | null;
+  conversionEngine: string | null;
+  conversionError: string | null;
   createdAt: string | null;
 }
