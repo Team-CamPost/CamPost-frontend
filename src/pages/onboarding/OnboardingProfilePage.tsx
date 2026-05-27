@@ -297,7 +297,7 @@ export const OnboardingProfilePage = () => {
           onClick={handleSkip}
           type="button"
         >
-          다음에 설정하기
+          나중에 설정하기
         </button>
       </form>
     </section>
