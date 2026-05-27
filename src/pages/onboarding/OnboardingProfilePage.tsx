@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Check, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "../../app/router/paths";
+import { DEFAULT_PUBLIC_ENTRY_PATH, ROUTES } from "../../app/router/paths";
 import { saveOnboardingProfile, UserApiError } from "../../shared/api/user";
 import {
   DEPARTMENTS,
@@ -60,6 +60,10 @@ export const OnboardingProfilePage = () => {
     setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   };
 
+  const handleSkip = () => {
+    navigate(DEFAULT_PUBLIC_ENTRY_PATH, { replace: true });
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNicknameTouched(true);
@@ -104,7 +108,7 @@ export const OnboardingProfilePage = () => {
   };
 
   return (
-    <section className="min-h-[calc(100vh-4rem)] bg-[#f5f7fb] px-5 py-8 text-slate-950 sm:px-8 sm:py-12">
+    <section className="min-h-screen bg-[#f5f7fb] px-5 py-8 text-slate-950 sm:px-8 sm:py-12">
       <form
         className="mx-auto flex min-h-[680px] w-full max-w-[520px] flex-col rounded-[28px] bg-white px-6 py-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] sm:px-8"
         noValidate
@@ -287,6 +291,13 @@ export const OnboardingProfilePage = () => {
           type={currentStep < steps.length - 1 ? "button" : "submit"}
         >
           {currentStep < steps.length - 1 ? "다음" : "완료"}
+        </button>
+        <button
+          className="mt-3 h-9 text-sm font-semibold text-slate-400 transition hover:text-slate-600"
+          onClick={handleSkip}
+          type="button"
+        >
+          다음에 설정하기
         </button>
       </form>
     </section>
