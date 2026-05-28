@@ -25,9 +25,15 @@ interface EmailVerificationCheckResponse {
 }
 
 interface LoginResponse {
-  accessToken: string;
-  tokenType: string;
+  userId: number;
+  username: string;
   name: string;
+  role: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+  refreshTokenExpiresIn: number;
   profileCompleted?: boolean;
 }
 
