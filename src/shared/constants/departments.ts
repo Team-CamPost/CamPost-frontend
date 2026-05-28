@@ -14,9 +14,10 @@ export const DEPARTMENTS: Department[] = [
     backendDeptCode: DEFAULT_BACKEND_DEPT_CODE,
   },
   { id: "cse", name: "컴퓨터공학과", backendDeptCode: "ACE" },
-  { id: "sds", name: "통계데이터사이언스학과", backendDeptCode: "STAT" },
+  { id: "mobile", name: "모바일시스템공학과", backendDeptCode: "MOBILE" },
+  { id: "sds", name: "통계사이언스학과", backendDeptCode: "STAT" },
   { id: "cybersec", name: "사이버보안학과", backendDeptCode: "INDSEC" },
-  { id: "ai", name: "인공지능학과", backendDeptCode: "AI" },
+  { id: "swcu", name: "SW중심대학사업단", backendDeptCode: "SWCU" },
 ];
 
 export const getDepartmentById = (departmentId: string) =>

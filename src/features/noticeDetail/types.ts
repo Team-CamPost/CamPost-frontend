@@ -55,6 +55,7 @@ export interface NoticeAttachmentData {
   conversionEngine: string | null;
   conversionError: string | null;
   createdAt: string | null;
+  isPreviewFile?: boolean;
 }
 
 export interface NoticeDetailDto {

@@ -10,6 +10,7 @@ export interface NoticeDto {
   date: string | null;
   views: number | null;
   sourceUrl: string | null;
+  thumbnailPath: string | null;
   deadline: string | null;
   target: string | null;
   applyMethod: string | null;
@@ -24,4 +25,5 @@ export interface NoticeCardData {
   date: string;
   dDay?: number;
   isBookmarked?: boolean;
+  thumbnailUrl?: string;
 }

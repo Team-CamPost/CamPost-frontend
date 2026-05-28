@@ -35,6 +35,7 @@ export const TrendingNotices = () => {
     date: formatDate(notice.date),
     dDay: undefined,
     isBookmarked: false,
+    thumbnailUrl: notice.thumbnailPath ?? undefined,
   }));
 
   return (

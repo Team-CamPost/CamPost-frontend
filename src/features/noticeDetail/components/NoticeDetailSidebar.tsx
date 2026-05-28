@@ -23,6 +23,7 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
     noticeId: notice.id,
     isBookmarked: notice.isBookmarked,
   });
+  const attachments = buildVisibleAttachments(notice.attachments);
   const isBookmarked =
     bookmarkState.noticeId === notice.id
       ? bookmarkState.isBookmarked
@@ -137,7 +138,7 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
         </div>
       </section>
 
-      {notice.attachments.length > 0 && (
+      {attachments.length > 0 && (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
@@ -145,14 +146,14 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
               첨부파일
             </h2>
             <span className="rounded bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
-              {notice.attachments.length}
+              {attachments.length}
             </span>
           </div>
 
           <div className="flex flex-col gap-3">
-            {notice.attachments.map((attachment) => (
+            {attachments.map((attachment) => (
               <AttachmentItem
-                key={attachment.id}
+                key={`${attachment.id}:${attachment.fileKey}`}
                 attachment={attachment}
               />
             ))}
@@ -188,7 +189,9 @@ const AttachmentItem = ({
   attachment: NoticeAttachmentData;
 }) => {
   const previewUrl =
-    attachment.conversionStatus === "success" && attachment.previewPdfPath
+    !attachment.isPreviewFile &&
+    attachment.conversionStatus === "success" &&
+    attachment.previewPdfPath
       ? toBackendAssetUrl(attachment.previewPdfPath)
       : "";
   const downloadUrl =
@@ -284,12 +287,65 @@ const IMAGE_EXTENSIONS = new Set([
   "svg",
 ]);
 
+const buildVisibleAttachments = (attachments: NoticeAttachmentData[]) =>
+  attachments.flatMap((attachment) => {
+    if (
+      attachment.conversionStatus !== "success" ||
+      !attachment.previewPdfPath
+    ) {
+      return [attachment];
+    }
+
+    return [
+      {
+        ...attachment,
+        previewPdfPath: null,
+        previewPdfSize: null,
+        previewPdfChecksum: null,
+      },
+      {
+        ...attachment,
+        id: -attachment.id,
+        fileKey: `${attachment.fileKey || attachment.id}:preview-pdf`,
+        originalName: toPreviewPdfName(attachment.originalName),
+        ext: "pdf",
+        fileType: "document",
+        mimeType: "application/pdf",
+        fileSize: attachment.previewPdfSize,
+        checksum: attachment.previewPdfChecksum,
+        sourceUrl: null,
+        localPath: attachment.previewPdfPath,
+        downloadOk: true,
+        extractedText: null,
+        extractedChars: null,
+        parser: null,
+        parseQuality: null,
+        parseOk: null,
+        downloadCached: null,
+        previewPdfPath: null,
+        previewPdfSize: null,
+        previewPdfChecksum: null,
+        conversionStatus: null,
+        conversionError: null,
+        isPreviewFile: true,
+      },
+    ];
+  });
+
+const toPreviewPdfName = (name: string) => {
+  const trimmed = name.trim() || "attachment";
+  const dotIndex = trimmed.lastIndexOf(".");
+  if (dotIndex <= 0) return `${trimmed}.preview.pdf`;
+  return `${trimmed.slice(0, dotIndex)}.preview.pdf`;
+};
+
 const isImageAttachment = (attachment: NoticeAttachmentData) =>
   attachment.fileType?.toLowerCase() === "image" ||
   attachment.mimeType?.toLowerCase().startsWith("image/") ||
   IMAGE_EXTENSIONS.has(attachment.ext?.toLowerCase() ?? "");
 
 const getAttachmentStatusLabel = (attachment: NoticeAttachmentData) => {
+  if (attachment.isPreviewFile) return "PDF preview file";
   if (
     attachment.conversionStatus === "success" &&
     Boolean(attachment.previewPdfPath)

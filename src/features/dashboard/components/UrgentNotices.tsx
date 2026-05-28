@@ -35,6 +35,7 @@ export const UrgentNotices = () => {
     date: formatDate(notice.date),
     dDay: getDDay(notice.deadline) ?? undefined,
     isBookmarked: false,
+    thumbnailUrl: notice.thumbnailPath ?? undefined,
   }));
 
   return (

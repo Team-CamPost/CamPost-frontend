@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "../../router/paths";
 import { getDepartmentById } from "../../../shared/constants/departments";
+import { DepartmentSelector } from "../../../shared/components/DepartmentSelector";
 
 export const DepartmentSidebar = () => {
   const { departmentId = "" } = useParams();
@@ -58,6 +59,11 @@ export const DepartmentSidebar = () => {
           </span>
         </div>
       </div>
+
+      <DepartmentSelector
+        preserveHash
+        variant="sidebar"
+      />
 
       {/* Navigation Menu */}
       <nav className="flex flex-col gap-1">

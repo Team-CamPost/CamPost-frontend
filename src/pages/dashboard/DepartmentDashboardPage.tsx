@@ -11,6 +11,7 @@ import {
   DEFAULT_DEPARTMENT_ID,
   getBackendDeptCodeByDepartmentId,
 } from "../../shared/constants/departments";
+import { DepartmentSelector } from "../../shared/components/DepartmentSelector";
 import { formatDate, getDDay } from "../../shared/utils/date";
 import type { NoticeCardData } from "../../features/dashboard/types/notice";
 
@@ -62,6 +63,7 @@ export const DepartmentDashboardPage = () => {
         date: formatDate(notice.date),
         dDay: getDDay(notice.deadline) ?? undefined,
         isBookmarked: false,
+        thumbnailUrl: notice.thumbnailPath ?? undefined,
         summary: notice.target || undefined,
         hasAttachment: false,
       })),
@@ -69,6 +71,8 @@ export const DepartmentDashboardPage = () => {
 
   return (
     <main className="w-full pb-20">
+      <DepartmentSelector className="mb-8" />
+
       {showHeroBanner && <HeroBannerCarousel />}
 
       <div
