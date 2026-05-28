@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
+import { toBackendAssetUrl } from "../../../shared/utils/assets";
 import type { NoticeCardData } from "../types/notice";
 import {
   getCategoryTone,
@@ -17,6 +18,7 @@ interface NoticeCardProps {
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
   const showDeadlineBadge = isDeadlineSoon(notice) || isDeadlinePassed(notice);
   const deadlineBadgeLabel = getDeadlineBadgeLabel(notice);
+  const thumbnailUrl = toBackendAssetUrl(notice.thumbnailUrl);
 
   return (
     <div className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:border-[#2046FF]/30 hover:shadow-lg hover:shadow-[#2046FF]/10">
@@ -26,8 +28,17 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
       >
         {/* Thumbnail Area (Fixed Height) */}
         <div className="relative h-40 w-full shrink-0 overflow-hidden bg-slate-50">
-          {/* Placeholder gradient matching Event-us visual style */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 transition-transform duration-500 group-hover:scale-105" />
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 transition-transform duration-500 group-hover:scale-105" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/10" />
 
           <div className="absolute inset-0 flex flex-col justify-between p-4">
             <div className="flex items-start justify-between">
@@ -45,10 +56,11 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
               )}
             </div>
 
-            {/* Optional: Add visual placeholder for image/logo */}
-            <div className="mt-auto mb-4 self-center opacity-10">
-              <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-            </div>
+            {!thumbnailUrl && (
+              <div className="mt-auto mb-4 self-center opacity-10">
+                <div className="h-12 w-12 rounded-full bg-slate-400"></div>
+              </div>
+            )}
           </div>
         </div>
 
