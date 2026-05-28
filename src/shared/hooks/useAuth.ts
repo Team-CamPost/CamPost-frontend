@@ -21,6 +21,17 @@ export const setAccessToken = (token: string) => {
 };
 
 export const clearAuthStorage = () => {
+  const hasAuthStorage =
+    localStorage.getItem(ACCESS_TOKEN_KEY) ||
+    localStorage.getItem(REFRESH_TOKEN_KEY) ||
+    localStorage.getItem(USER_NAME_KEY) ||
+    localStorage.getItem(USERNAME_KEY) ||
+    localStorage.getItem(USER_ROLE_KEY);
+
+  if (!hasAuthStorage) {
+    return;
+  }
+
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_NAME_KEY);
@@ -71,10 +82,14 @@ export const useAuth = () => {
 
       if (username?.trim()) {
         localStorage.setItem(USERNAME_KEY, username);
+      } else {
+        localStorage.removeItem(USERNAME_KEY);
       }
 
       if (role?.trim()) {
         localStorage.setItem(USER_ROLE_KEY, role);
+      } else {
+        localStorage.removeItem(USER_ROLE_KEY);
       }
 
       notifyAuthChanged();
