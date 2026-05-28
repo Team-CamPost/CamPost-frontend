@@ -36,12 +36,20 @@ export const LoginPage = () => {
     try {
       const normalizedUsername = loginId.trim();
       const result = await loginApi({ username: normalizedUsername, password });
-      login(result.accessToken, result.name, normalizedUsername);
+      const sessionUsername = result.username || normalizedUsername;
+      login({
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        name: result.name,
+        username: sessionUsername,
+        role: result.role,
+      });
+      setPassword("");
       const profileCompleted =
         result.profileCompleted ??
-        isOnboardingProfileCompleted(normalizedUsername);
+        isOnboardingProfileCompleted(sessionUsername);
       if (profileCompleted) {
-        markOnboardingProfileCompleted(normalizedUsername);
+        markOnboardingProfileCompleted(sessionUsername);
       }
       navigate(profileCompleted ? redirectTo : ROUTES.onboardingProfile, {
         replace: true,
@@ -81,6 +89,7 @@ export const LoginPage = () => {
               아이디
             </span>
             <input
+              autoComplete="username"
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
               id="login-id"
               onChange={(event) => {
@@ -101,6 +110,7 @@ export const LoginPage = () => {
               비밀번호
             </span>
             <input
+              autoComplete="current-password"
               className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm transition outline-none focus:border-[#2046FF] focus:ring-2 focus:ring-[#2046FF]/15"
               id="login-password"
               onChange={(event) => {
