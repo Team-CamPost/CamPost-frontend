@@ -8,6 +8,7 @@ import {
   FileText,
   Image,
   Paperclip,
+  Archive,
   Share2,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -195,8 +196,9 @@ const AttachmentItem = ({
       ? toBackendAssetUrl(attachment.previewPdfPath)
       : "";
   const downloadUrl =
+    (attachment.localPath ? toBackendAssetUrl(attachment.localPath) : "") ||
     attachment.sourceUrl ||
-    (attachment.localPath ? toBackendAssetUrl(attachment.localPath) : "");
+    "";
   const hasPdfPreview = Boolean(previewUrl);
   const isDownloadable = Boolean(downloadUrl);
   const meta = [
@@ -206,12 +208,19 @@ const AttachmentItem = ({
     .filter(Boolean)
     .join(" · ");
   const isImage = isImageAttachment(attachment);
+  const isArchive = isArchiveAttachment(attachment);
   const statusLabel = getAttachmentStatusLabel(attachment);
 
   const content = (
     <>
       <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-[#2046FF]">
-        {isImage ? <Image size={18} /> : <FileText size={18} />}
+        {isImage ? (
+          <Image size={18} />
+        ) : isArchive ? (
+          <Archive size={18} />
+        ) : (
+          <FileText size={18} />
+        )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-bold text-slate-900">
@@ -287,6 +296,8 @@ const IMAGE_EXTENSIONS = new Set([
   "svg",
 ]);
 
+const ARCHIVE_EXTENSIONS = new Set(["zip", "7z", "rar", "tar", "gz"]);
+
 const buildVisibleAttachments = (attachments: NoticeAttachmentData[]) =>
   attachments.flatMap((attachment) => {
     if (
@@ -344,6 +355,10 @@ const isImageAttachment = (attachment: NoticeAttachmentData) =>
   attachment.mimeType?.toLowerCase().startsWith("image/") ||
   IMAGE_EXTENSIONS.has(attachment.ext?.toLowerCase() ?? "");
 
+const isArchiveAttachment = (attachment: NoticeAttachmentData) =>
+  attachment.fileType?.toLowerCase() === "archive" ||
+  ARCHIVE_EXTENSIONS.has(attachment.ext?.toLowerCase() ?? "");
+
 const getAttachmentStatusLabel = (attachment: NoticeAttachmentData) => {
   if (attachment.isPreviewFile) return "PDF preview file";
   if (
@@ -353,6 +368,7 @@ const getAttachmentStatusLabel = (attachment: NoticeAttachmentData) => {
     return "PDF 미리보기 가능";
   }
   if (isImageAttachment(attachment)) return "이미지 파일";
+  if (isArchiveAttachment(attachment)) return "압축파일";
   if (attachment.parseOk === null) return "";
   return attachment.parseOk ? "본문 추출 완료" : "본문 추출 실패";
 };
