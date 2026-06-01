@@ -9,7 +9,7 @@
 ## Vercel
 
 - Framework preset: Vite
-- Root directory: `CamPost-frontend`
+- Root directory: `.`
 - Install command: `pnpm install --frozen-lockfile`
 - Build command: `pnpm build`
 - Output directory: `dist`
