@@ -190,12 +190,12 @@ const AttachmentItem = ({
   attachment: NoticeAttachmentData;
 }) => {
   const previewUrl =
-    !attachment.isPreviewFile &&
-    attachment.conversionStatus === "success" &&
-    attachment.previewPdfPath
-      ? toBackendAssetUrl(attachment.previewPdfPath)
+    !attachment.isPreviewFile && attachment.conversionStatus === "success"
+      ? (attachment.previewPdfR2Url ??
+        toBackendAssetUrl(attachment.previewPdfPath))
       : "";
   const downloadUrl =
+    attachment.r2Url ||
     (attachment.localPath ? toBackendAssetUrl(attachment.localPath) : "") ||
     attachment.sourceUrl ||
     "";
