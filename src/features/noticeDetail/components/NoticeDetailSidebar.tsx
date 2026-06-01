@@ -302,7 +302,7 @@ const buildVisibleAttachments = (attachments: NoticeAttachmentData[]) =>
   attachments.flatMap((attachment) => {
     if (
       attachment.conversionStatus !== "success" ||
-      !attachment.previewPdfPath
+      (!attachment.previewPdfPath && !attachment.previewPdfR2Url)
     ) {
       return [attachment];
     }
@@ -311,6 +311,7 @@ const buildVisibleAttachments = (attachments: NoticeAttachmentData[]) =>
       {
         ...attachment,
         previewPdfPath: null,
+        previewPdfR2Url: null,
         previewPdfSize: null,
         previewPdfChecksum: null,
       },
@@ -326,6 +327,7 @@ const buildVisibleAttachments = (attachments: NoticeAttachmentData[]) =>
         checksum: attachment.previewPdfChecksum,
         sourceUrl: null,
         localPath: attachment.previewPdfPath,
+        r2Url: attachment.previewPdfR2Url,
         downloadOk: true,
         extractedText: null,
         extractedChars: null,
@@ -334,6 +336,7 @@ const buildVisibleAttachments = (attachments: NoticeAttachmentData[]) =>
         parseOk: null,
         downloadCached: null,
         previewPdfPath: null,
+        previewPdfR2Url: null,
         previewPdfSize: null,
         previewPdfChecksum: null,
         conversionStatus: null,
