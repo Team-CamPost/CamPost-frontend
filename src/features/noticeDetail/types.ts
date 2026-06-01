@@ -41,6 +41,7 @@ export interface NoticeAttachmentData {
   checksum: string | null;
   sourceUrl: string | null;
   localPath: string | null;
+  r2Url: string | null;
   downloadOk: boolean | null;
   extractedText: string | null;
   extractedChars: number | null;
@@ -49,6 +50,7 @@ export interface NoticeAttachmentData {
   parseOk: boolean | null;
   downloadCached: boolean | null;
   previewPdfPath: string | null;
+  previewPdfR2Url: string | null;
   previewPdfSize: number | null;
   previewPdfChecksum: string | null;
   conversionStatus: string | null;
@@ -94,6 +96,7 @@ export interface NoticeAttachmentDto {
   checksum: string | null;
   sourceUrl: string | null;
   localPath: string | null;
+  r2Url: string | null;
   downloadOk: boolean | null;
   extractedText: string | null;
   extractedChars: number | null;
@@ -102,6 +105,7 @@ export interface NoticeAttachmentDto {
   parseOk: boolean | null;
   downloadCached: boolean | null;
   previewPdfPath: string | null;
+  previewPdfR2Url: string | null;
   previewPdfSize: number | null;
   previewPdfChecksum: string | null;
   conversionStatus: string | null;
