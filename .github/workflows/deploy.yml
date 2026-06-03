@@ -45,12 +45,12 @@ jobs:
         if: success()
         run: |
           curl -H "Content-Type: application/json" \
-          -d "{\"content\":\"✅ [CamPost-frontend] deploy success on dev\"}" \
+          -d "{\"content\":\"[CamPost-frontend] deploy success on dev\"}" \
           "${{ secrets.DISCORD_WEBHOOK_URL }}"
 
       - name: Discord failed
         if: failure()
         run: |
           curl -H "Content-Type: application/json" \
-          -d "{\"content\":\"❌ [CamPost-frontend] deploy failed on dev\"}" \
+          -d "{\"content\":\"[CamPost-frontend] deploy failed on dev\"}" \
           "${{ secrets.DISCORD_WEBHOOK_URL }}"
