@@ -1,0 +1,56 @@
+name: Deploy Frontend (Vercel)
+
+on:
+  push:
+    branches: ["dev"]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+        env:
+          NODE_ENV: production
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Deploy to Vercel
+        run: |
+          pnpm dlx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          pnpm dlx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          pnpm dlx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Discord success
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d "{\"content\":\"✅ [CamPost-frontend] deploy success on dev\"}" \
+          "${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+      - name: Discord failed
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d "{\"content\":\"❌ [CamPost-frontend] deploy failed on dev\"}" \
+          "${{ secrets.DISCORD_WEBHOOK_URL }}"
