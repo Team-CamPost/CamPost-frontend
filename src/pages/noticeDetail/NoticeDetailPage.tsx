@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { ROUTES } from "../../app/router/paths";
+import { addRecentlyViewedNotice } from "../../shared/hooks/useRecentlyViewedNotices";
 import { NoticeDetailContent } from "../../features/noticeDetail/components/NoticeDetailContent";
 import { NoticeDetailRecommendations } from "../../features/noticeDetail/components/NoticeDetailRecommendations";
 import { NoticeDetailSidebar } from "../../features/noticeDetail/components/NoticeDetailSidebar";
@@ -61,10 +63,24 @@ export const NoticeDetailPage = () => {
           category: notice.category || "미분류",
           date: formatDate(notice.date),
           dDay: undefined,
-          isBookmarked: false,
+          isBookmarked: notice.isBookmarked ?? false,
           thumbnailUrl: notice.thumbnailPath ?? undefined,
         })),
   });
+
+  // 공지 상세 진입 시 "최근 본 공지"에 기록한다 (localStorage 기반).
+  useEffect(() => {
+    if (!noticeDetail) return;
+    addRecentlyViewedNotice({
+      id: String(noticeDetail.id),
+      title: noticeDetail.title,
+      category: noticeDetail.category,
+      date: noticeDetail.date,
+      deadline: noticeDetail.deadline,
+      thumbnailPath: null,
+      department: noticeDetail.department,
+    });
+  }, [noticeDetail]);
 
   if (!hasValidNoticeId) {
     return (
@@ -186,7 +202,7 @@ const toNoticeDetailData = (notice: NoticeDetailDto): NoticeDetailData => {
     target: notice.target || "제한 없음",
     applyMethod: notice.applyMethod || "별도 안내 없음",
     views: notice.views ?? 0,
-    isBookmarked: false,
+    isBookmarked: notice.isBookmarked ?? false,
     bodyText: notice.bodyText || "",
     bodyHtml: notice.bodyHtml || "",
     contentHtml: notice.contentHtml || "",

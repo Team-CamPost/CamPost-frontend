@@ -16,6 +16,7 @@ export interface NoticeDto {
   applyMethod: string | null;
   publishedAt: string | null;
   createdAt: string | null;
+  isBookmarked: boolean | null;
 }
 
 export interface NoticeCardData {

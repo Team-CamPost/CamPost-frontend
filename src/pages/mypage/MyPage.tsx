@@ -42,6 +42,7 @@ import {
 } from "../../shared/hooks/useOnboardingProfileDraft";
 import {
   clearPreferredDepartmentId,
+  getPreferredDepartmentId,
   setPreferredDepartmentId,
 } from "../../shared/hooks/usePreferredDepartment";
 
@@ -178,6 +179,10 @@ export const MyPage = () => {
   const [accountDeleteErrorMessage, setAccountDeleteErrorMessage] =
     useState("");
   const [isSavingAccountDelete, setIsSavingAccountDelete] = useState(false);
+  const [isEditingDefaultDept, setIsEditingDefaultDept] = useState(false);
+  const [defaultDeptId, setDefaultDeptId] = useState(
+    () => getPreferredDepartmentId() ?? "",
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -257,6 +262,7 @@ export const MyPage = () => {
   const openProfileEditForm = () => {
     setIsChangingPassword(false);
     setIsDeletingAccount(false);
+    setIsEditingDefaultDept(false);
     setEditForm({
       department: departmentCode || "",
       grade: grade || "",
@@ -270,6 +276,7 @@ export const MyPage = () => {
   const openPasswordChangeForm = () => {
     setIsEditingProfile(false);
     setIsDeletingAccount(false);
+    setIsEditingDefaultDept(false);
     setEditSuccessMessage("");
     setPasswordForm(initialPasswordChangeForm);
     setPasswordErrorMessage("");
@@ -280,11 +287,25 @@ export const MyPage = () => {
   const openAccountDeleteForm = () => {
     setIsEditingProfile(false);
     setIsChangingPassword(false);
+    setIsEditingDefaultDept(false);
     setEditSuccessMessage("");
     setPasswordSuccessMessage("");
     setAccountDeleteForm(initialAccountDeleteForm);
     setAccountDeleteErrorMessage("");
     setIsDeletingAccount(true);
+  };
+
+  const openDefaultDeptForm = () => {
+    setIsEditingProfile(false);
+    setIsChangingPassword(false);
+    setIsDeletingAccount(false);
+    setDefaultDeptId(getPreferredDepartmentId() ?? "");
+    setIsEditingDefaultDept(true);
+  };
+
+  const handleSelectDefaultDept = (departmentId: string) => {
+    setPreferredDepartmentId(departmentId);
+    setDefaultDeptId(departmentId);
   };
 
   const closeProfileEditForm = () => {
@@ -837,6 +858,66 @@ export const MyPage = () => {
           </section>
         )}
 
+        {isEditingDefaultDept && (
+          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">
+                  기본 학과 설정
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  앱에 처음 들어왔을 때 보여줄 공지 학과를 선택합니다. 선택 즉시
+                  저장됩니다.
+                </p>
+              </div>
+
+              <button
+                aria-label="기본 학과 설정 닫기"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+                onClick={() => setIsEditingDefaultDept(false)}
+                type="button"
+              >
+                <X
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                />
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {DEPARTMENTS.map((department) => {
+                const isSelected = department.id === defaultDeptId;
+
+                return (
+                  <button
+                    className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-sm font-bold transition ${
+                      isSelected
+                        ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                    key={department.id}
+                    onClick={() => handleSelectDefaultDept(department.id)}
+                    type="button"
+                  >
+                    {department.name}
+                    {isSelected && (
+                      <span className="h-2 w-2 rounded-full bg-[#2046FF]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              현재 기본 학과:{" "}
+              <span className="font-bold text-slate-800">
+                {DEPARTMENTS.find((dept) => dept.id === defaultDeptId)?.name ??
+                  "기본값 (소프트웨어학과)"}
+              </span>
+            </div>
+          </section>
+        )}
+
         <div className="mt-5 space-y-4">
           <MenuSection
             items={[
@@ -874,13 +955,13 @@ export const MyPage = () => {
                 title: "최근 본 공지",
                 description: "다시 확인할 공지",
                 icon: <Clock3 className="h-5 w-5" />,
-                badge: "준비 중",
+                to: ROUTES.recent,
               },
               {
                 title: "기본 학과 설정",
                 description: "처음 보여줄 공지 학과",
                 icon: <GraduationCap className="h-5 w-5" />,
-                badge: "준비 중",
+                onClick: openDefaultDeptForm,
               },
             ]}
             title="공지"

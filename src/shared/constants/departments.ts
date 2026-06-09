@@ -27,3 +27,9 @@ export const getBackendDeptCodeByDepartmentId = (departmentId: string) => {
   const department = getDepartmentById(departmentId);
   return department?.backendDeptCode || DEFAULT_BACKEND_DEPT_CODE;
 };
+
+export const getDepartmentIdByName = (name: string | null | undefined) => {
+  if (!name) return DEFAULT_DEPARTMENT_ID;
+  const department = DEPARTMENTS.find((dept) => dept.name === name.trim());
+  return department?.id || DEFAULT_DEPARTMENT_ID;
+};

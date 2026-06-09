@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_BASE_URL } from "../config/env";
+import { apiClient } from "./client";
 import type { ApiResponse } from "../types/api";
 import type {
   NoticeDto,
@@ -7,11 +6,8 @@ import type {
 } from "../../features/dashboard/types/notice";
 import type { NoticeDetailDto } from "../../features/noticeDetail/types";
 
-const noticeApiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-});
-
+// 공지 조회는 공개 엔드포인트지만, 로그인 상태면 JWT를 함께 보내 isBookmarked를
+// 채워 받기 위해 토큰을 자동 첨부하는 apiClient를 사용한다. (선택적 인증)
 interface FetchNoticesParams {
   deptCode?: string;
   sortBy?: NoticeSortBy;
@@ -23,7 +19,7 @@ export const fetchNotices = async ({
   sortBy = "recent",
   limit = 4,
 }: FetchNoticesParams): Promise<NoticeDto[]> => {
-  const response = await noticeApiClient.get<ApiResponse<NoticeDto[]>>(
+  const response = await apiClient.get<ApiResponse<NoticeDto[]>>(
     "/api/v1/notices",
     {
       params: {
@@ -44,7 +40,7 @@ export const fetchNotices = async ({
 export const fetchNoticeDetail = async (
   noticeId: number,
 ): Promise<NoticeDetailDto> => {
-  const response = await noticeApiClient.get<ApiResponse<NoticeDetailDto>>(
+  const response = await apiClient.get<ApiResponse<NoticeDetailDto>>(
     `/api/v1/notices/${noticeId}`,
   );
 
