@@ -69,6 +69,8 @@ export const NoticeDetailPage = () => {
   });
 
   // 공지 상세 진입 시 "최근 본 공지"에 기록한다 (localStorage 기반).
+  // 같은 공지(id)에 대해 1회만 기록하면 되므로 id만 의존성으로 사용한다.
+  // (noticeDetail 객체 전체를 의존하면 리페치마다 불필요하게 재실행됨)
   useEffect(() => {
     if (!noticeDetail) return;
     addRecentlyViewedNotice({
@@ -80,7 +82,8 @@ export const NoticeDetailPage = () => {
       thumbnailPath: null,
       department: noticeDetail.department,
     });
-  }, [noticeDetail]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noticeDetail?.id]);
 
   if (!hasValidNoticeId) {
     return (

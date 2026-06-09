@@ -35,11 +35,19 @@ export const addRecentlyViewedNotice = (
     0,
     MAX_RECENT,
   );
-  localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
+  try {
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
+  } catch {
+    // 시크릿 모드·저장공간 부족·쿠키 차단 등으로 쓰기 실패 시 무시 (최근 본 공지는 부가 기능)
+  }
 };
 
 export const clearRecentlyViewedNotices = () => {
-  localStorage.removeItem(RECENTLY_VIEWED_KEY);
+  try {
+    localStorage.removeItem(RECENTLY_VIEWED_KEY);
+  } catch {
+    // 저장소 접근 불가 시 무시
+  }
 };
 
 // 마운트 시점의 스냅샷을 반환한다. (페이지 진입 시 1회 로드)
