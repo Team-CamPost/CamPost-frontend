@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
 import { addBookmark, removeBookmark } from "../../../shared/api/bookmark";
 import { toApiClientError } from "../../../shared/api/client";
+import { useLoginRequired } from "../../../shared/hooks/useLoginRequired";
 import { useAuth } from "../../../shared/hooks/useAuth";
 import { toBackendAssetUrl } from "../../../shared/utils/assets";
 import type { NoticeCardData } from "../types/notice";
@@ -21,7 +22,7 @@ interface NoticeCardProps {
 }
 
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
-  const navigate = useNavigate();
+  const requireLogin = useLoginRequired();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(
@@ -44,7 +45,7 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
       setIsBookmarked(!next); // 낙관적 토글 되돌리기
       const apiError = toApiClientError(error);
       if (apiError.status === 401) {
-        navigate(ROUTES.login);
+        requireLogin();
       }
     },
   });
@@ -53,7 +54,7 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
     event.preventDefault();
     event.stopPropagation();
     if (!isAuthenticated) {
-      navigate(ROUTES.login);
+      requireLogin();
       return;
     }
     if (bookmarkMutation.isPending) return;

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import {
   Bookmark,
   Calendar,
@@ -17,8 +16,8 @@ import type { ReactNode } from "react";
 import { toBackendAssetUrl } from "../../../shared/utils/assets";
 import { addBookmark, removeBookmark } from "../../../shared/api/bookmark";
 import { toApiClientError } from "../../../shared/api/client";
+import { useLoginRequired } from "../../../shared/hooks/useLoginRequired";
 import { useAuth } from "../../../shared/hooks/useAuth";
-import { ROUTES } from "../../../app/router/paths";
 import type { NoticeAttachmentData, NoticeDetailData } from "../types";
 
 interface NoticeDetailSidebarProps {
@@ -26,7 +25,7 @@ interface NoticeDetailSidebarProps {
 }
 
 export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
-  const navigate = useNavigate();
+  const requireLogin = useLoginRequired();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [bookmarkState, setBookmarkState] = useState({
@@ -56,7 +55,7 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
       setBookmarkState({ noticeId: notice.id, isBookmarked: !next });
       const apiError = toApiClientError(error);
       if (apiError.status === 401) {
-        navigate(ROUTES.login);
+        requireLogin();
         return;
       }
       window.alert(apiError.message);
@@ -65,7 +64,7 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
 
   const handleBookmarkToggle = () => {
     if (!isAuthenticated) {
-      navigate(ROUTES.login);
+      requireLogin();
       return;
     }
     if (bookmarkMutation.isPending) {
