@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
 import { addBookmark, removeBookmark } from "../../../shared/api/bookmark";
 import { toApiClientError } from "../../../shared/api/client";
+import { useLoginRequired } from "../../../shared/hooks/useLoginRequired";
 import { useAuth } from "../../../shared/hooks/useAuth";
 import { toBackendAssetUrl } from "../../../shared/utils/assets";
 import type { NoticeCardData } from "../types/notice";
@@ -21,11 +22,19 @@ interface NoticeCardProps {
 }
 
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
-  const navigate = useNavigate();
+  const requireLogin = useLoginRequired();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(
     Boolean(notice.isBookmarked),
   );
+  // 외부(리스트 리패치 등)에서 notice.isBookmarked가 바뀌면 로컬 상태를 동기화한다.
+  // (React 권장 render-phase 동기화 패턴 — 같은 카드 인스턴스가 재사용될 때 stale 방지)
+  const [prevIsBookmarked, setPrevIsBookmarked] = useState(notice.isBookmarked);
+  if (notice.isBookmarked !== prevIsBookmarked) {
+    setPrevIsBookmarked(notice.isBookmarked);
+    setIsBookmarked(Boolean(notice.isBookmarked));
+  }
   const showDeadlineBadge = isDeadlineSoon(notice) || isDeadlinePassed(notice);
   const deadlineBadgeLabel = getDeadlineBadgeLabel(notice);
   const thumbnailUrl = toBackendAssetUrl(notice.thumbnailUrl);
@@ -33,12 +42,17 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
   const bookmarkMutation = useMutation({
     mutationFn: (next: boolean) =>
       next ? addBookmark(Number(notice.id)) : removeBookmark(Number(notice.id)),
-    onSuccess: (status) => setIsBookmarked(status.bookmarked),
+    onSuccess: (status) => {
+      setIsBookmarked(status.bookmarked);
+      // 북마크 목록/공지 목록 캐시를 무효화해 즉시 반영되게 한다.
+      queryClient.invalidateQueries({ queryKey: ["bookmarked-notices"] });
+      queryClient.invalidateQueries({ queryKey: ["notices"] });
+    },
     onError: (error, next) => {
       setIsBookmarked(!next); // 낙관적 토글 되돌리기
       const apiError = toApiClientError(error);
       if (apiError.status === 401) {
-        navigate(ROUTES.login);
+        requireLogin();
       }
     },
   });
@@ -47,7 +61,7 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
     event.preventDefault();
     event.stopPropagation();
     if (!isAuthenticated) {
-      navigate(ROUTES.login);
+      requireLogin();
       return;
     }
     if (bookmarkMutation.isPending) return;

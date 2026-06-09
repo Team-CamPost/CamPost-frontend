@@ -45,6 +45,7 @@ import {
   getPreferredDepartmentId,
   setPreferredDepartmentId,
 } from "../../shared/hooks/usePreferredDepartment";
+import { useEscapeKey } from "../../shared/hooks/useEscapeKey";
 
 type MenuItem = {
   title: string;
@@ -323,6 +324,24 @@ export const MyPage = () => {
     setAccountDeleteErrorMessage("");
   };
 
+  // Esc 키로 현재 열린 모달을 닫는다.
+  const isAnyModalOpen =
+    isEditingProfile ||
+    isChangingPassword ||
+    isEditingDefaultDept ||
+    isDeletingAccount;
+  useEscapeKey(() => {
+    if (isEditingProfile) {
+      closeProfileEditForm();
+    } else if (isChangingPassword) {
+      closePasswordChangeForm();
+    } else if (isEditingDefaultDept) {
+      setIsEditingDefaultDept(false);
+    } else if (isDeletingAccount) {
+      closeAccountDeleteForm();
+    }
+  }, isAnyModalOpen);
+
   const handleProfileEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setEditErrorMessage("");
@@ -591,331 +610,363 @@ export const MyPage = () => {
         </section>
 
         {isEditingProfile && (
-          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-950">
-                  내 정보 수정
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  마이페이지와 공지 개인화에 사용할 정보를 수정합니다.
-                </p>
-              </div>
-
-              <button
-                aria-label="내 정보 수정 닫기"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
-                onClick={closeProfileEditForm}
-                type="button"
-              >
-                <X
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                />
-              </button>
-            </div>
-
-            <form
-              className="mt-5 space-y-5"
-              noValidate
-              onSubmit={handleProfileEditSubmit}
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-5 py-8 backdrop-blur-sm"
+            onClick={closeProfileEditForm}
+          >
+            <section
+              className="my-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:p-6"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
             >
-              <div>
-                <label
-                  className="text-sm font-bold text-slate-700"
-                  htmlFor="profile-nickname"
-                >
-                  닉네임
-                </label>
-                <input
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 transition outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-4 focus:ring-[#2046FF]/10"
-                  id="profile-nickname"
-                  maxLength={MAX_NICKNAME_LENGTH}
-                  onChange={(event) => {
-                    setEditForm((form) => ({
-                      ...form,
-                      nickname: event.target.value,
-                    }));
-                    setEditErrorMessage("");
-                  }}
-                  placeholder="닉네임을 입력해주세요"
-                  type="text"
-                  value={editForm.nickname}
-                />
-                <div className="mt-2 flex justify-end text-xs font-semibold text-slate-400">
-                  {editForm.nickname.length}/{MAX_NICKNAME_LENGTH}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">
+                    내 정보 수정
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    마이페이지와 공지 개인화에 사용할 정보를 수정합니다.
+                  </p>
                 </div>
-              </div>
 
-              <div>
-                <p className="text-sm font-bold text-slate-700">학과</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {DEPARTMENTS.map((department) => {
-                    const isSelected =
-                      department.backendDeptCode === editForm.department;
-
-                    return (
-                      <button
-                        className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-sm font-bold transition ${
-                          isSelected
-                            ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                        key={department.id}
-                        onClick={() => {
-                          setEditForm((form) => ({
-                            ...form,
-                            department: department.backendDeptCode,
-                          }));
-                          setEditErrorMessage("");
-                        }}
-                        type="button"
-                      >
-                        {department.name}
-                        {isSelected && (
-                          <span className="h-2 w-2 rounded-full bg-[#2046FF]" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-slate-700">학년</p>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  {gradeOptions.map((option) => {
-                    const isSelected = option.value === editForm.grade;
-
-                    return (
-                      <button
-                        className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
-                          isSelected
-                            ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                        key={option.value}
-                        onClick={() => {
-                          setEditForm((form) => ({
-                            ...form,
-                            grade: option.value,
-                          }));
-                          setEditErrorMessage("");
-                        }}
-                        type="button"
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                선택 정보:{" "}
-                <span className="font-bold text-slate-800">
-                  {selectedEditDepartment?.name || "학과 미선택"} ·{" "}
-                  {editForm.grade ? formatGrade(editForm.grade) : "학년 미선택"}
-                </span>
-              </div>
-
-              {editErrorMessage && (
-                <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-                  <AlertCircle
-                    aria-hidden="true"
-                    className="mt-0.5 h-4 w-4 shrink-0"
-                  />
-                  {editErrorMessage}
-                </div>
-              )}
-
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
-                  className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                  aria-label="내 정보 수정 닫기"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
                   onClick={closeProfileEditForm}
                   type="button"
                 >
-                  취소
-                </button>
-                <button
-                  className="h-11 rounded-xl bg-[#2046FF] px-5 text-sm font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
-                  disabled={!canSubmitProfileEdit}
-                  type="submit"
-                >
-                  {isSavingProfile ? "저장 중" : "저장"}
+                  <X
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                  />
                 </button>
               </div>
-            </form>
-          </section>
+
+              <form
+                className="mt-5 space-y-5"
+                noValidate
+                onSubmit={handleProfileEditSubmit}
+              >
+                <div>
+                  <label
+                    className="text-sm font-bold text-slate-700"
+                    htmlFor="profile-nickname"
+                  >
+                    닉네임
+                  </label>
+                  <input
+                    className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 transition outline-none placeholder:text-slate-400 focus:border-[#2046FF] focus:ring-4 focus:ring-[#2046FF]/10"
+                    id="profile-nickname"
+                    maxLength={MAX_NICKNAME_LENGTH}
+                    onChange={(event) => {
+                      setEditForm((form) => ({
+                        ...form,
+                        nickname: event.target.value,
+                      }));
+                      setEditErrorMessage("");
+                    }}
+                    placeholder="닉네임을 입력해주세요"
+                    type="text"
+                    value={editForm.nickname}
+                  />
+                  <div className="mt-2 flex justify-end text-xs font-semibold text-slate-400">
+                    {editForm.nickname.length}/{MAX_NICKNAME_LENGTH}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-slate-700">학과</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {DEPARTMENTS.map((department) => {
+                      const isSelected =
+                        department.backendDeptCode === editForm.department;
+
+                      return (
+                        <button
+                          className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-sm font-bold transition ${
+                            isSelected
+                              ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                          }`}
+                          key={department.id}
+                          onClick={() => {
+                            setEditForm((form) => ({
+                              ...form,
+                              department: department.backendDeptCode,
+                            }));
+                            setEditErrorMessage("");
+                          }}
+                          type="button"
+                        >
+                          {department.name}
+                          {isSelected && (
+                            <span className="h-2 w-2 rounded-full bg-[#2046FF]" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-slate-700">학년</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {gradeOptions.map((option) => {
+                      const isSelected = option.value === editForm.grade;
+
+                      return (
+                        <button
+                          className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
+                            isSelected
+                              ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                          }`}
+                          key={option.value}
+                          onClick={() => {
+                            setEditForm((form) => ({
+                              ...form,
+                              grade: option.value,
+                            }));
+                            setEditErrorMessage("");
+                          }}
+                          type="button"
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  선택 정보:{" "}
+                  <span className="font-bold text-slate-800">
+                    {selectedEditDepartment?.name || "학과 미선택"} ·{" "}
+                    {editForm.grade
+                      ? formatGrade(editForm.grade)
+                      : "학년 미선택"}
+                  </span>
+                </div>
+
+                {editErrorMessage && (
+                  <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                    <AlertCircle
+                      aria-hidden="true"
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    {editErrorMessage}
+                  </div>
+                )}
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                    onClick={closeProfileEditForm}
+                    type="button"
+                  >
+                    취소
+                  </button>
+                  <button
+                    className="h-11 rounded-xl bg-[#2046FF] px-5 text-sm font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
+                    disabled={!canSubmitProfileEdit}
+                    type="submit"
+                  >
+                    {isSavingProfile ? "저장 중" : "저장"}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
         )}
 
         {isChangingPassword && (
-          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-950">
-                  비밀번호 변경
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.
-                </p>
-              </div>
-
-              <button
-                aria-label="비밀번호 변경 닫기"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
-                onClick={closePasswordChangeForm}
-                type="button"
-              >
-                <X
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                />
-              </button>
-            </div>
-
-            <form
-              className="mt-5 space-y-5"
-              noValidate
-              onSubmit={handlePasswordChangeSubmit}
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-5 py-8 backdrop-blur-sm"
+            onClick={closePasswordChangeForm}
+          >
+            <section
+              className="my-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:p-6"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
             >
-              <PasswordField
-                autoComplete="current-password"
-                id="current-password"
-                label="현재 비밀번호"
-                onChange={(value) => {
-                  setPasswordForm((form) => ({
-                    ...form,
-                    currentPassword: value,
-                  }));
-                  setPasswordErrorMessage("");
-                }}
-                placeholder="현재 비밀번호 입력"
-                value={passwordForm.currentPassword}
-              />
-
-              <PasswordField
-                autoComplete="new-password"
-                id="new-password"
-                label="새 비밀번호"
-                onChange={(value) => {
-                  setPasswordForm((form) => ({
-                    ...form,
-                    newPassword: value,
-                  }));
-                  setPasswordErrorMessage("");
-                }}
-                placeholder="영문+숫자 포함 8자 이상"
-                value={passwordForm.newPassword}
-              />
-
-              <PasswordField
-                autoComplete="new-password"
-                id="new-password-confirm"
-                label="새 비밀번호 확인"
-                onChange={(value) => {
-                  setPasswordForm((form) => ({
-                    ...form,
-                    newPasswordConfirm: value,
-                  }));
-                  setPasswordErrorMessage("");
-                }}
-                placeholder="새 비밀번호 재입력"
-                value={passwordForm.newPasswordConfirm}
-              />
-
-              <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-                새 비밀번호는 영문과 숫자를 모두 포함해 8자 이상이어야 합니다.
-              </div>
-
-              {passwordErrorMessage && (
-                <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-                  <AlertCircle
-                    aria-hidden="true"
-                    className="mt-0.5 h-4 w-4 shrink-0"
-                  />
-                  {passwordErrorMessage}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">
+                    비밀번호 변경
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.
+                  </p>
                 </div>
-              )}
 
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
-                  className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                  aria-label="비밀번호 변경 닫기"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
                   onClick={closePasswordChangeForm}
                   type="button"
                 >
-                  취소
-                </button>
-                <button
-                  className="h-11 rounded-xl bg-[#2046FF] px-5 text-sm font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
-                  disabled={!canSubmitPasswordChange}
-                  type="submit"
-                >
-                  {isSavingPassword ? "변경 중" : "변경"}
+                  <X
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                  />
                 </button>
               </div>
-            </form>
-          </section>
+
+              <form
+                className="mt-5 space-y-5"
+                noValidate
+                onSubmit={handlePasswordChangeSubmit}
+              >
+                <PasswordField
+                  autoComplete="current-password"
+                  id="current-password"
+                  label="현재 비밀번호"
+                  onChange={(value) => {
+                    setPasswordForm((form) => ({
+                      ...form,
+                      currentPassword: value,
+                    }));
+                    setPasswordErrorMessage("");
+                  }}
+                  placeholder="현재 비밀번호 입력"
+                  value={passwordForm.currentPassword}
+                />
+
+                <PasswordField
+                  autoComplete="new-password"
+                  id="new-password"
+                  label="새 비밀번호"
+                  onChange={(value) => {
+                    setPasswordForm((form) => ({
+                      ...form,
+                      newPassword: value,
+                    }));
+                    setPasswordErrorMessage("");
+                  }}
+                  placeholder="영문+숫자 포함 8자 이상"
+                  value={passwordForm.newPassword}
+                />
+
+                <PasswordField
+                  autoComplete="new-password"
+                  id="new-password-confirm"
+                  label="새 비밀번호 확인"
+                  onChange={(value) => {
+                    setPasswordForm((form) => ({
+                      ...form,
+                      newPasswordConfirm: value,
+                    }));
+                    setPasswordErrorMessage("");
+                  }}
+                  placeholder="새 비밀번호 재입력"
+                  value={passwordForm.newPasswordConfirm}
+                />
+
+                <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+                  새 비밀번호는 영문과 숫자를 모두 포함해 8자 이상이어야 합니다.
+                </div>
+
+                {passwordErrorMessage && (
+                  <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                    <AlertCircle
+                      aria-hidden="true"
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    {passwordErrorMessage}
+                  </div>
+                )}
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                    onClick={closePasswordChangeForm}
+                    type="button"
+                  >
+                    취소
+                  </button>
+                  <button
+                    className="h-11 rounded-xl bg-[#2046FF] px-5 text-sm font-bold text-white transition hover:bg-[#1838d8] disabled:cursor-not-allowed disabled:bg-slate-300"
+                    disabled={!canSubmitPasswordChange}
+                    type="submit"
+                  >
+                    {isSavingPassword ? "변경 중" : "변경"}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
         )}
 
         {isEditingDefaultDept && (
-          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-950">
-                  기본 학과 설정
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  앱에 처음 들어왔을 때 보여줄 공지 학과를 선택합니다. 선택 즉시
-                  저장됩니다.
-                </p>
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-5 py-8 backdrop-blur-sm"
+            onClick={() => setIsEditingDefaultDept(false)}
+          >
+            <section
+              className="my-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:p-6"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">
+                    기본 학과 설정
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    앱에 처음 들어왔을 때 보여줄 공지 학과를 선택합니다. 선택
+                    즉시 저장됩니다.
+                  </p>
+                </div>
+
+                <button
+                  aria-label="기본 학과 설정 닫기"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+                  onClick={() => setIsEditingDefaultDept(false)}
+                  type="button"
+                >
+                  <X
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                  />
+                </button>
               </div>
 
-              <button
-                aria-label="기본 학과 설정 닫기"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
-                onClick={() => setIsEditingDefaultDept(false)}
-                type="button"
-              >
-                <X
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                />
-              </button>
-            </div>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                {DEPARTMENTS.map((department) => {
+                  const isSelected = department.id === defaultDeptId;
 
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              {DEPARTMENTS.map((department) => {
-                const isSelected = department.id === defaultDeptId;
+                  return (
+                    <button
+                      className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-sm font-bold transition ${
+                        isSelected
+                          ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                      key={department.id}
+                      onClick={() => handleSelectDefaultDept(department.id)}
+                      type="button"
+                    >
+                      {department.name}
+                      {isSelected && (
+                        <span className="h-2 w-2 rounded-full bg-[#2046FF]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-                return (
-                  <button
-                    className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-sm font-bold transition ${
-                      isSelected
-                        ? "border-[#2046FF] bg-[#2046FF]/5 text-[#2046FF]"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                    key={department.id}
-                    onClick={() => handleSelectDefaultDept(department.id)}
-                    type="button"
-                  >
-                    {department.name}
-                    {isSelected && (
-                      <span className="h-2 w-2 rounded-full bg-[#2046FF]" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-              현재 기본 학과:{" "}
-              <span className="font-bold text-slate-800">
-                {DEPARTMENTS.find((dept) => dept.id === defaultDeptId)?.name ??
-                  "기본값 (소프트웨어학과)"}
-              </span>
-            </div>
-          </section>
+              <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                현재 기본 학과:{" "}
+                <span className="font-bold text-slate-800">
+                  {DEPARTMENTS.find((dept) => dept.id === defaultDeptId)
+                    ?.name ?? "기본값 (소프트웨어학과)"}
+                </span>
+              </div>
+            </section>
+          </div>
         )}
 
         <div className="mt-5 space-y-4">
