@@ -152,7 +152,7 @@ const initialAccountDeleteForm: AccountDeleteForm = {
 
 export const MyPage = () => {
   const navigate = useNavigate();
-  const { logout, userName, username } = useAuth();
+  const { logout, updateUserName, userName, username } = useAuth();
   const profileDraft = useMemo(() => getOnboardingProfileDraft(), []);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -362,6 +362,7 @@ export const MyPage = () => {
       });
 
       setProfile(updatedProfile);
+      updateUserName(updatedProfile.nickname);
 
       const updatedDepartmentId = getDepartmentIdByCode(
         updatedProfile.department,

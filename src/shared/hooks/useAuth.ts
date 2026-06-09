@@ -20,6 +20,18 @@ export const setAccessToken = (token: string) => {
   notifyAuthChanged();
 };
 
+export const setStoredUserName = (name: string) => {
+  const normalizedName = name.trim();
+
+  if (normalizedName) {
+    localStorage.setItem(USER_NAME_KEY, normalizedName);
+  } else {
+    localStorage.removeItem(USER_NAME_KEY);
+  }
+
+  notifyAuthChanged();
+};
+
 export const clearAuthStorage = () => {
   const hasAuthStorage =
     localStorage.getItem(ACCESS_TOKEN_KEY) ||
@@ -102,7 +114,15 @@ export const useAuth = () => {
   }, []);
 
   return useMemo(
-    () => ({ isAuthenticated, userName, username, role, login, logout }),
+    () => ({
+      isAuthenticated,
+      userName,
+      username,
+      role,
+      login,
+      logout,
+      updateUserName: setStoredUserName,
+    }),
     [isAuthenticated, userName, username, role, login, logout],
   );
 };
