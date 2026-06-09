@@ -28,6 +28,13 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
   const [isBookmarked, setIsBookmarked] = useState(
     Boolean(notice.isBookmarked),
   );
+  // 외부(리스트 리패치 등)에서 notice.isBookmarked가 바뀌면 로컬 상태를 동기화한다.
+  // (React 권장 render-phase 동기화 패턴 — 같은 카드 인스턴스가 재사용될 때 stale 방지)
+  const [prevIsBookmarked, setPrevIsBookmarked] = useState(notice.isBookmarked);
+  if (notice.isBookmarked !== prevIsBookmarked) {
+    setPrevIsBookmarked(notice.isBookmarked);
+    setIsBookmarked(Boolean(notice.isBookmarked));
+  }
   const showDeadlineBadge = isDeadlineSoon(notice) || isDeadlinePassed(notice);
   const deadlineBadgeLabel = getDeadlineBadgeLabel(notice);
   const thumbnailUrl = toBackendAssetUrl(notice.thumbnailUrl);

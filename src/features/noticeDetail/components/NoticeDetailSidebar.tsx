@@ -32,11 +32,24 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
     noticeId: notice.id,
     isBookmarked: notice.isBookmarked,
   });
+  // prop 변경(공지 전환 또는 외부 리패치로 isBookmarked 변경) 시 로컬 상태 동기화한다.
+  // (React 권장 render-phase 동기화 패턴 — 같은 컴포넌트 인스턴스가 재사용될 때 stale 방지)
+  const [prevNotice, setPrevNotice] = useState({
+    id: notice.id,
+    isBookmarked: notice.isBookmarked,
+  });
+  if (
+    notice.id !== prevNotice.id ||
+    notice.isBookmarked !== prevNotice.isBookmarked
+  ) {
+    setPrevNotice({ id: notice.id, isBookmarked: notice.isBookmarked });
+    setBookmarkState({
+      noticeId: notice.id,
+      isBookmarked: notice.isBookmarked,
+    });
+  }
   const attachments = buildVisibleAttachments(notice.attachments);
-  const isBookmarked =
-    bookmarkState.noticeId === notice.id
-      ? bookmarkState.isBookmarked
-      : notice.isBookmarked;
+  const isBookmarked = bookmarkState.isBookmarked;
 
   const bookmarkMutation = useMutation({
     mutationFn: (next: boolean) =>
