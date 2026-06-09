@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   Bookmark,
@@ -27,6 +27,7 @@ interface NoticeDetailSidebarProps {
 
 export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [bookmarkState, setBookmarkState] = useState({
     noticeId: notice.id,
@@ -46,6 +47,9 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
         noticeId: notice.id,
         isBookmarked: status.bookmarked,
       });
+      // 북마크 목록/공지 목록 캐시를 무효화해 즉시 반영되게 한다.
+      queryClient.invalidateQueries({ queryKey: ["bookmarked-notices"] });
+      queryClient.invalidateQueries({ queryKey: ["notices"] });
     },
     onError: (error, next) => {
       // 실패 시 낙관적 토글 되돌리기

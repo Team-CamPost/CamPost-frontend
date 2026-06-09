@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
@@ -22,6 +22,7 @@ interface NoticeCardProps {
 
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(
     Boolean(notice.isBookmarked),
@@ -33,7 +34,12 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
   const bookmarkMutation = useMutation({
     mutationFn: (next: boolean) =>
       next ? addBookmark(Number(notice.id)) : removeBookmark(Number(notice.id)),
-    onSuccess: (status) => setIsBookmarked(status.bookmarked),
+    onSuccess: (status) => {
+      setIsBookmarked(status.bookmarked);
+      // 북마크 목록/공지 목록 캐시를 무효화해 즉시 반영되게 한다.
+      queryClient.invalidateQueries({ queryKey: ["bookmarked-notices"] });
+      queryClient.invalidateQueries({ queryKey: ["notices"] });
+    },
     onError: (error, next) => {
       setIsBookmarked(!next); // 낙관적 토글 되돌리기
       const apiError = toApiClientError(error);
