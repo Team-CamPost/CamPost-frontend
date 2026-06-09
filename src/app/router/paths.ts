@@ -6,6 +6,7 @@ export const ROUTES = {
   signup: "/signup",
   mypage: "/mypage",
   bookmarks: "/bookmarks",
+  recent: "/recent",
   onboardingProfile: "/onboarding/profile",
   departmentDashboard: (departmentId: string) => `/departments/${departmentId}`,
   noticeDetail: (departmentId: string, noticeId: string) =>
@@ -18,6 +19,7 @@ export const ROUTE_PATHS = {
   signup: "/signup",
   mypage: "/mypage",
   bookmarks: "/bookmarks",
+  recent: "/recent",
   onboardingProfile: "/onboarding/profile",
   departmentDashboard: "/departments/:departmentId",
   noticeDetail: "/departments/:departmentId/notices/:noticeId",

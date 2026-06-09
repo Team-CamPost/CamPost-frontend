@@ -62,7 +62,7 @@ export const DepartmentDashboardPage = () => {
         category: notice.category || "미분류",
         date: formatDate(notice.date),
         dDay: getDDay(notice.deadline) ?? undefined,
-        isBookmarked: false,
+        isBookmarked: notice.isBookmarked ?? false,
         thumbnailUrl: notice.thumbnailPath ?? undefined,
         summary: notice.target || undefined,
         hasAttachment: false,

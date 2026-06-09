@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Bookmark,
   Calendar,
@@ -13,6 +15,10 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toBackendAssetUrl } from "../../../shared/utils/assets";
+import { addBookmark, removeBookmark } from "../../../shared/api/bookmark";
+import { toApiClientError } from "../../../shared/api/client";
+import { useAuth } from "../../../shared/hooks/useAuth";
+import { ROUTES } from "../../../app/router/paths";
 import type { NoticeAttachmentData, NoticeDetailData } from "../types";
 
 interface NoticeDetailSidebarProps {
@@ -20,6 +26,8 @@ interface NoticeDetailSidebarProps {
 }
 
 export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [bookmarkState, setBookmarkState] = useState({
     noticeId: notice.id,
     isBookmarked: notice.isBookmarked,
@@ -30,11 +38,39 @@ export const NoticeDetailSidebar = ({ notice }: NoticeDetailSidebarProps) => {
       ? bookmarkState.isBookmarked
       : notice.isBookmarked;
 
+  const bookmarkMutation = useMutation({
+    mutationFn: (next: boolean) =>
+      next ? addBookmark(Number(notice.id)) : removeBookmark(Number(notice.id)),
+    onSuccess: (status) => {
+      setBookmarkState({
+        noticeId: notice.id,
+        isBookmarked: status.bookmarked,
+      });
+    },
+    onError: (error, next) => {
+      // 실패 시 낙관적 토글 되돌리기
+      setBookmarkState({ noticeId: notice.id, isBookmarked: !next });
+      const apiError = toApiClientError(error);
+      if (apiError.status === 401) {
+        navigate(ROUTES.login);
+        return;
+      }
+      window.alert(apiError.message);
+    },
+  });
+
   const handleBookmarkToggle = () => {
-    setBookmarkState({
-      noticeId: notice.id,
-      isBookmarked: !isBookmarked,
-    });
+    if (!isAuthenticated) {
+      navigate(ROUTES.login);
+      return;
+    }
+    if (bookmarkMutation.isPending) {
+      return;
+    }
+    const next = !isBookmarked;
+    // 낙관적 업데이트: 응답 전 UI 먼저 토글
+    setBookmarkState({ noticeId: notice.id, isBookmarked: next });
+    bookmarkMutation.mutate(next);
   };
 
   return (

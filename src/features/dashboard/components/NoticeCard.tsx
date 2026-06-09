@@ -1,6 +1,11 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router-dom";
 import { Bookmark, Clock } from "lucide-react";
 import { ROUTES } from "../../../app/router/paths";
+import { addBookmark, removeBookmark } from "../../../shared/api/bookmark";
+import { toApiClientError } from "../../../shared/api/client";
+import { useAuth } from "../../../shared/hooks/useAuth";
 import { toBackendAssetUrl } from "../../../shared/utils/assets";
 import type { NoticeCardData } from "../types/notice";
 import {
@@ -16,9 +21,40 @@ interface NoticeCardProps {
 }
 
 export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [isBookmarked, setIsBookmarked] = useState(
+    Boolean(notice.isBookmarked),
+  );
   const showDeadlineBadge = isDeadlineSoon(notice) || isDeadlinePassed(notice);
   const deadlineBadgeLabel = getDeadlineBadgeLabel(notice);
   const thumbnailUrl = toBackendAssetUrl(notice.thumbnailUrl);
+
+  const bookmarkMutation = useMutation({
+    mutationFn: (next: boolean) =>
+      next ? addBookmark(Number(notice.id)) : removeBookmark(Number(notice.id)),
+    onSuccess: (status) => setIsBookmarked(status.bookmarked),
+    onError: (error, next) => {
+      setIsBookmarked(!next); // 낙관적 토글 되돌리기
+      const apiError = toApiClientError(error);
+      if (apiError.status === 401) {
+        navigate(ROUTES.login);
+      }
+    },
+  });
+
+  const handleBookmarkClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isAuthenticated) {
+      navigate(ROUTES.login);
+      return;
+    }
+    if (bookmarkMutation.isPending) return;
+    const next = !isBookmarked;
+    setIsBookmarked(next); // 낙관적 업데이트
+    bookmarkMutation.mutate(next);
+  };
 
   return (
     <div className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:border-[#2046FF]/30 hover:shadow-lg hover:shadow-[#2046FF]/10">
@@ -89,18 +125,14 @@ export const NoticeCard = ({ notice, departmentId }: NoticeCardProps) => {
       {/* Bookmark Button as a sibling to Link to avoid nested interactive elements */}
       <button
         className="absolute right-5 bottom-5 z-10 text-slate-300 transition-colors hover:text-[#2046FF]"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          // Bookmark logic will go here
-        }}
+        onClick={handleBookmarkClick}
         aria-label="북마크"
-        aria-pressed={notice.isBookmarked}
+        aria-pressed={isBookmarked}
       >
         <Bookmark
           size={16}
-          fill={notice.isBookmarked ? "currentColor" : "none"}
-          className={notice.isBookmarked ? "text-[#2046FF]" : ""}
+          fill={isBookmarked ? "currentColor" : "none"}
+          className={isBookmarked ? "text-[#2046FF]" : ""}
         />
       </button>
     </div>
