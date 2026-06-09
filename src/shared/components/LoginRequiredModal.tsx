@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LogIn, X } from "lucide-react";
 import { ROUTES } from "../../app/router/paths";
 import { LoginRequiredContext } from "../hooks/useLoginRequired";
+import { useEscapeKey } from "../hooks/useEscapeKey";
 
 export const LoginRequiredProvider = ({ children }: PropsWithChildren) => {
   const [open, setOpen] = useState(false);
@@ -26,6 +27,8 @@ interface LoginRequiredModalProps {
 
 const LoginRequiredModal = ({ open, onClose }: LoginRequiredModalProps) => {
   const navigate = useNavigate();
+
+  useEscapeKey(onClose, open);
 
   if (!open) {
     return null;

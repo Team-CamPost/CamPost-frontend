@@ -45,6 +45,7 @@ import {
   getPreferredDepartmentId,
   setPreferredDepartmentId,
 } from "../../shared/hooks/usePreferredDepartment";
+import { useEscapeKey } from "../../shared/hooks/useEscapeKey";
 
 type MenuItem = {
   title: string;
@@ -322,6 +323,24 @@ export const MyPage = () => {
     setIsDeletingAccount(false);
     setAccountDeleteErrorMessage("");
   };
+
+  // Esc 키로 현재 열린 모달을 닫는다.
+  const isAnyModalOpen =
+    isEditingProfile ||
+    isChangingPassword ||
+    isEditingDefaultDept ||
+    isDeletingAccount;
+  useEscapeKey(() => {
+    if (isEditingProfile) {
+      closeProfileEditForm();
+    } else if (isChangingPassword) {
+      closePasswordChangeForm();
+    } else if (isEditingDefaultDept) {
+      setIsEditingDefaultDept(false);
+    } else if (isDeletingAccount) {
+      closeAccountDeleteForm();
+    }
+  }, isAnyModalOpen);
 
   const handleProfileEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
