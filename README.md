@@ -5,6 +5,16 @@
 
 > **기본 브랜치는 `dev`입니다.** 모든 작업은 `dev`에서 분기하고 `dev`로 병합합니다. `dev` 직접 push는 금지입니다.
 
+> **CamPost는 3개 저장소로 구성됩니다.**
+>
+> | 저장소               | 역할                          | 스택                |
+> | -------------------- | ----------------------------- | ------------------- |
+> | **CamPost-frontend** | 사용자 화면 (현재 저장소)     | React · Vite        |
+> | **CamPost-backend**  | REST API · 인증 · 데이터 적재 | Spring Boot · Java  |
+> | **CamPost-pipeline** | 공지 크롤링 · 가공            | Python · Playwright |
+>
+> 프론트엔드는 `VITE_API_BASE_URL`로 백엔드 REST API와 통신합니다.
+
 ---
 
 ## 1. 기술 스택
