@@ -98,7 +98,8 @@ CamPost-frontend/
 │  ├─ pages/                     # 페이지 단위 화면 (라우트와 1:1)
 │  │  ├─ bookmarks/              #   북마크한 공지
 │  │  ├─ dashboard/              #   학과 대시보드
-│  │  ├─ login/  signup/         #   로그인 · 회원가입
+│  │  ├─ login/                  #   로그인
+│  │  ├─ signup/                 #   회원가입
 │  │  ├─ mypage/                 #   마이페이지 (프로필·설정 모달)
 │  │  ├─ noticeDetail/           #   공지 상세 페이지
 │  │  ├─ onboarding/             #   온보딩 (학과/학년 설정)
